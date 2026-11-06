@@ -1,4 +1,4 @@
-# Terra Firme — versão 2, backend para mobile
+# Terra Firme — versão, backend para mobile
 
 Stack aprovada: **React Native + Expo + TypeScript no aplicativo; Python/FastAPI nas APIs; PostgreSQL + PostGIS no servidor**.
 
