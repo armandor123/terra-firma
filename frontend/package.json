@@ -1,0 +1,12 @@
+{
+  "name": "terra-firma-web",
+  "private": true,
+  "scripts": {
+    "test": "node tests/dom.cjs",
+    "test:browser": "node tests/smoke.cjs"
+  },
+  "devDependencies": {
+    "jsdom": "31.0.0",
+    "playwright": "1.62.1"
+  }
+}

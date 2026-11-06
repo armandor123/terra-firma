@@ -1,3 +1,13 @@
+# Integração web + IA (nova versão)
+
+A interface Terra Firma do `reboot.zip` está integrada ao backend em `frontend/`. A tela principal usa autenticação e PostgreSQL; o protótipo original permanece em `demo.html`.
+
+**Início e configuração:** [INTEGRACAO-WEB-IA.md](docs/INTEGRACAO-WEB-IA.md). Gemini analisa a foto no worker; NASA FIRMS e Open-Meteo compõem o cruzamento de evidências. Exige chaves locais para ativar os provedores. Não confirma incêndio e não aciona autoridades.
+
+As seções abaixo registram a base anterior; o guia de integração descreve a execução da nova versão.
+
+---
+
 # Terra Firme — versão, backend para mobile
 
 Stack aprovada: **React Native + Expo + TypeScript no aplicativo; Python/FastAPI nas APIs; PostgreSQL + PostGIS no servidor**.

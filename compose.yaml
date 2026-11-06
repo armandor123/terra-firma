@@ -24,7 +24,7 @@ services:
     build: ./dados-api
     environment:
       DATA_API_KEY: ${DATA_API_KEY:?Defina DATA_API_KEY no .env}
-      DATA_MODE: ${DATA_MODE:-demo}
+      DATA_MODE: ${DATA_MODE:-live}
       FIRMS_MAP_KEY: ${FIRMS_MAP_KEY:-}
     ports:
       - "127.0.0.1:8001:8001"
@@ -43,6 +43,31 @@ services:
       migrate:
         condition: service_completed_successfully
       dados:
+        condition: service_started
+  worker:
+    build: ./backend
+    command: ["python", "-m", "backend.worker"]
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql://${POSTGRES_USER:-terra_firma}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-terra_firma}
+      DATA_API_URL: http://dados:8001
+      DATA_API_KEY: ${DATA_API_KEY:?Defina DATA_API_KEY}
+      GEMINI_API_KEY: ${GEMINI_API_KEY:-}
+      GEMINI_MODEL: ${GEMINI_MODEL:-gemini-2.5-flash}
+      PHOTO_DIR: /app/data/photos
+    volumes:
+      - private_photos:/app/data/photos
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+      dados:
+        condition: service_started
+  web:
+    build: ./frontend
+    ports:
+      - "${WEB_BIND:-127.0.0.1}:8080:80"
+    depends_on:
+      backend:
         condition: service_started
 volumes:
   postgres_data:

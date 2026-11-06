@@ -289,14 +289,15 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
                 return {'id':existing['id'],'replayed':True}
             incident_id=uid()
             photo_key=store.put(image)
-            ai={'status':'simulated','simulated':True,'classification':'inconclusive','confidence':None,
-                'warning':'Nenhum modelo de IA foi executado; revisão humana necessária.'}
+            ai={'status':'pending','simulated':False,'classification':'inconclusive','confidence':None,
+                'warning':'Foto aguardando processamento; revisão humana necessária.'}
             db.execute("""INSERT INTO incidents(id,property_id,farmer_id,description,latitude,longitude,
                 location_source,location_authorized,created_at,status,photo_key,photo_type,ai_json,client_request_id,request_hash)
                 VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (incident_id,body.property_id,user['id'],body.description,body.latitude,body.longitude,
                  body.location_source,body.location_authorized,timestamp(),'submitted',photo_key,'image/jpeg',Jsonb(ai),
                  body.client_request_id,fingerprint))
+            db.execute('INSERT INTO analysis_jobs(incident_id) VALUES(%s)',(incident_id,))
         return {'id':incident_id,'replayed':False}
 
     @app.get('/v1/incidents')
@@ -313,6 +314,21 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
             result = public_incident(incident_access(db,incident_id,user))
             result['reviews'] = [dict(r) for r in db.execute('SELECT * FROM reviews WHERE incident_id=%s ORDER BY id',(incident_id,))]
             return result
+
+    @app.post('/v1/incidents/{incident_id}/analyze',status_code=202)
+    def retry_analysis(incident_id: str,user=Depends(ready)):
+        with connect(db_url) as db:
+            incident_access(db,incident_id,user)
+            job=db.execute('SELECT * FROM analysis_jobs WHERE incident_id=%s FOR UPDATE',(incident_id,)).fetchone()
+            if job and job['status'] in ('pending','processing','completed'):
+                raise HTTPException(409,'Análise já agendada, em execução ou concluída')
+            if job and job['updated_at'].timestamp() > time.time()-60:
+                raise HTTPException(429,'Aguarde um minuto para tentar novamente')
+            db.execute("""INSERT INTO analysis_jobs(incident_id) VALUES(%s)
+                ON CONFLICT(incident_id) DO UPDATE SET status='pending',attempts=0,lease_until=NULL,updated_at=now()""",(incident_id,))
+            db.execute('UPDATE incidents SET ai_json=%s WHERE id=%s',
+                       (Jsonb({'status':'pending','simulated':False}),incident_id))
+        return {'status':'pending'}
 
     @app.get('/v1/incidents/{incident_id}/photo')
     def photo(incident_id: str,user=Depends(ready)):
@@ -343,7 +359,8 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
             row = incident_access(db,incident_id,user)
         return {'draft':True,'sent':False,'text':f"MINUTA PARA REVISÃO — Ocorrência {incident_id}, registrada em {row['created_at']}. "
             f"Status interno: {row['status']}. Relato do agricultor: {row['description']}. "
-            'A classificação de IA é simulada. Verifique as evidências antes de qualquer comunicação.'}
+            f"Estado da análise: {row['ai_json'].get('status','unavailable')}. "
+            'Triagem experimental. Verifique as evidências antes de qualquer comunicação.'}
 
     @app.get('/v1/reports/summary')
     def summary(user=Depends(cooperative)):

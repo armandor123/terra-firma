@@ -20,6 +20,7 @@ def system(tmp_path,pg_url):
             db.execute('INSERT INTO users VALUES(%s,%s,%s,%s,%s,%s,FALSE)',(uid,coop,uid,uid,passwords.hash('initial-password-123'),role))
             db.execute('INSERT INTO sessions VALUES(%s,%s,%s,%s,%s,%s)',(uid,digest(uid),uid,time.time()+3600,digest('refresh-'+uid),time.time()+86400))
         db.execute('INSERT INTO properties(id,farmer_id,name,municipality,state,latitude,longitude,area_ha) VALUES(%s,%s,%s,%s,%s,%s,%s,%s)',('p1','farmer','Sitio','Campinas','SP',-22,-47,10))
+    c.photo_dir=tmp_path/'photos'
     return c,path
 
 def h(token):
@@ -49,7 +50,8 @@ def test_full_incident_review_flow_and_image(system):
         assert r.status_code==200,r.text
     item=c.get(f'/v1/incidents/{iid}',headers=h('admin')).json()
     assert len(item['reviews'])==3
-    assert item['ai']['simulated'] is True
+    assert item['ai']['simulated'] is False
+    assert item['ai']['status']=='pending'
     assert c.get(f'/v1/incidents/{iid}/notification-draft',headers=h('admin')).json()['sent'] is False
     assert c.get('/v1/reports/summary',headers=h('admin')).json()['by_status']=={'escalated':1}
 
@@ -147,7 +149,7 @@ def test_migration_reentrant(system):
     c,url=system
     migrate(url)
     with connect(url) as db:
-        assert db.execute('SELECT count(*) AS n FROM schema_migrations').fetchone()['n']==1
+        assert db.execute('SELECT count(*) AS n FROM schema_migrations').fetchone()['n']==2
 
 def test_concurrent_duplicate_upload(system):
     from concurrent.futures import ThreadPoolExecutor
@@ -165,3 +167,42 @@ def test_refresh_survives_access_expiry(system):
         db.execute('UPDATE sessions SET expires=0 WHERE token_hash=%s',(digest(tokens['access_token']),))
     assert c.get('/v1/me',headers=h(tokens['access_token'])).status_code==401
     assert c.post('/v1/auth/refresh',json={'refresh_token':tokens['refresh_token']}).status_code==200
+
+def test_worker_persists_ai_and_crossing(system,monkeypatch):
+    from backend.worker import process_one
+    from datetime import datetime,timezone
+    c,path=system
+    monkeypatch.setenv('GEMINI_API_KEY','test-key')
+    iid=send(c,latitude=-22,longitude=-47,location_source='manual',location_authorized=True).json()['id']
+    vision={'classification':'possible_smoke','fire':False,'smoke':True,'burned_area':False,'explanation':'Fumaça aparente.'}
+    ai=httpx.MockTransport(lambda r:httpx.Response(200,json={'candidates':[{'finishReason':'STOP','content':{'parts':[{'text':json.dumps(vision)}]}}]}))
+    now=datetime.now(timezone.utc).isoformat()
+    context={'weather':{'status':'unavailable','simulated':False},'hotspots':{'status':'ok','simulated':False,'data':[{'id':'near','latitude':-22,'longitude':-47,'observed_at':now}]}}
+    photo_dir=c.photo_dir
+    assert process_one(path,photo_dir,ai,httpx.MockTransport(lambda r:httpx.Response(200,json=context)))
+    result=c.get(f'/v1/incidents/{iid}',headers=h('farmer')).json()
+    assert result['status']=='submitted'  # AI never changes human status.
+    assert result['ai']['status']=='completed'
+    assert result['ai']['crossing']['nearby_hotspots'][0]['id']=='near'
+    assert result['ai']['environment_snapshot']==context
+    assert not process_one(path,photo_dir,ai)
+    assert c.post(f'/v1/incidents/{iid}/analyze',headers=h('other')).status_code==404
+    assert c.post(f'/v1/incidents/{iid}/analyze',headers=h('farmer')).status_code==409
+
+def test_missing_key_preserves_photo_and_allows_retry(system,monkeypatch):
+    from backend.worker import process_one
+    from backend.storage import PhotoStore
+    c,path=system
+    monkeypatch.delenv('GEMINI_API_KEY',raising=False)
+    iid=send(c).json()['id']
+    photo_dir=c.photo_dir
+    process_one(path,photo_dir,data_transport=httpx.MockTransport(lambda r:httpx.Response(503)))
+    out=c.get(f'/v1/incidents/{iid}',headers=h('farmer')).json()
+    assert out['ai']['status']=='unavailable'
+    assert out['ai']['crossing']['location_source']=='property_reference_not_photo_location'
+    assert c.get(f'/v1/incidents/{iid}/photo',headers=h('farmer')).status_code==200
+    assert c.post(f'/v1/incidents/{iid}/analyze',headers=h('farmer')).status_code==429
+    with connect(path) as db:
+        db.execute("UPDATE analysis_jobs SET updated_at=now()-interval '2 minutes' WHERE incident_id=%s",(iid,))
+    assert c.post(f'/v1/incidents/{iid}/analyze',headers=h('farmer')).status_code==202
+    assert c.post(f'/v1/incidents/{iid}/analyze',headers=h('farmer')).status_code==409
