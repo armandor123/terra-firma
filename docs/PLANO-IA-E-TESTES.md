@@ -1,6 +1,6 @@
 # Plano de integração da IA real e testes
 
-Atualizado em 06/11/2026. Este documento incorpora as etapas aprovadas para evolução do Guardiões do Fogo. É um plano de execução: não declara IA integrada, modelo avaliado ou testes adicionais aprovados.
+Atualizado em 06/11/2026. Este documento incorpora as etapas aprovadas para evolução do Terra Firma. É um plano de execução: não declara IA integrada, modelo avaliado ou testes adicionais aprovados.
 
 ## Objetivo e ponto de partida
 
