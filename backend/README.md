@@ -1,4 +1,4 @@
-# Backend de reserva — PostgreSQL/PostGIS e mobile
+# Backend oficial — PostgreSQL/PostGIS e mobile
 
 Aplicação FastAPI independente, versão 2.0.0. Para executar junto do projeto de dados, prefira o Compose da raiz. Ele inicia PostgreSQL, aplica migrações e só depois inicia a API.
 
@@ -10,7 +10,7 @@ Requer Python 3.12, PostgreSQL com PostGIS disponível e banco vazio criado por 
 python -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
-export DATABASE_URL='postgresql://usuario:SENHA_URL_ENCODED@127.0.0.1:5432/guardioes'
+export DATABASE_URL='postgresql://usuario:SENHA_URL_ENCODED@127.0.0.1:5432/terra_firma'
 export PHOTO_DIR=./data/photos
 export DATA_API_URL=http://127.0.0.1:8001
 export DATA_API_KEY='MESMA_CHAVE_DO_SERVICO_DE_DADOS'
@@ -63,8 +63,8 @@ As imagens não ficam no PostgreSQL. `PHOTO_DIR` contém arquivos JPEG privados,
 Na raiz, `compose.test.yaml` executa todos os testes com um PostgreSQL/PostGIS isolado. Se já tiver banco de testes:
 
 ```bash
-export TEST_DATABASE_URL='postgresql://usuario:senha@127.0.0.1:5432/guardioes_test'
-python -m pytest -q backend-reserva/tests tests_integration.py
+export TEST_DATABASE_URL='postgresql://usuario:senha@127.0.0.1:5432/terra_firma_test'
+python -m pytest -q backend/tests tests_integration.py
 ```
 
 Execute esse comando na raiz. Cada cenário cria/remove somente seu próprio schema com nome aleatório. O banco precisa permitir criar schemas e ter PostGIS. Sem `TEST_DATABASE_URL`, os cenários de banco são explicitamente ignorados, não aprovados.

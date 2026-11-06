@@ -1,6 +1,6 @@
 # Plano de integração da IA real e testes
 
-Atualizado em 06/11/2026. Este documento incorpora as etapas aprovadas para evolução do Terra Firma. É um plano de execução: não declara IA integrada, modelo avaliado ou testes adicionais aprovados.
+Atualizado em 06/11/2026. Este documento incorpora as etapas aprovadas para evolução do Terra-Firma. É um plano de execução: não declara IA integrada, modelo avaliado ou testes adicionais aprovados.
 
 ## Objetivo e ponto de partida
 
@@ -27,7 +27,7 @@ Executar um modelo não comprova sua precisão. Uma imagem sem indícios também
 | Cooperativa/revisores | Rotulagem/revisão de imagens e critérios para uso operacional |
 | Equipe do projeto | Escolha de fornecedor, credenciais, orçamento, ambiente de testes e aprovação do piloto |
 
-O backend de reserva deve implementar o mesmo contrato caso seja necessário. O módulo de IA pode pertencer ao projeto dados-api; isso não exige fundir os dois projetos nem entregar chaves externas ao aplicativo.
+O backend oficial deve consumir o contrato definido pelo serviço de dados/APIs. O módulo de IA pode pertencer ao projeto dados-api; isso não exige fundir os dois projetos nem entregar chaves externas ao aplicativo.
 
 ## Etapa 1 — Selecionar e preparar a IA real
 

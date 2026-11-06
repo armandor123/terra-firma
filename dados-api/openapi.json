@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Guardiões do Fogo — Dados e Inputs",
+    "title": "Terra-Firma — Dados e Inputs",
     "version": "1.0.0"
   },
   "paths": {

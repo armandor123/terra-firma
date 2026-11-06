@@ -2,12 +2,12 @@
 
 Stack aprovada: **React Native + Expo + TypeScript no aplicativo; Python/FastAPI nas APIs; PostgreSQL + PostGIS no servidor**.
 
-Esta entrega atualiza os dois projetos existentes. Sua responsabilidade principal continua em `dados-api`. O `backend-reserva` continua independente e opcional. Não foi criado um aplicativo completo: foi incluído um cliente TypeScript de referência e o contrato para a equipe mobile.
+Esta entrega atualiza os dois projetos existentes. Sua responsabilidade principal continua em `dados-api`. O `backend` é o backend oficial do Terra-Firma e utiliza o serviço independente `dados-api`. Não foi criado um aplicativo completo: foi incluído um cliente TypeScript de referência e o contrato para a equipe mobile.
 
 | Componente | Responsabilidade |
 |---|---|
-| dados-api | clima e focos, normalização e respostas parciais; funciona sem o backend reserva |
-| backend-reserva | usuários, propriedades, ocorrências, fotos, revisão e relatórios |
+| dados-api | clima e focos, normalização e respostas parciais; pode ser executado e testado separadamente |
+| backend | usuários, propriedades, ocorrências, fotos, revisão e relatórios |
 | PostgreSQL/PostGIS | dados persistentes, sessões e consultas geográficas |
 | volume privado de fotos | arquivos de imagens; banco guarda a referência |
 | cliente mobile da equipe | câmera, permissões, telas, armazenamento local e fila offline |
@@ -22,7 +22,7 @@ Esta entrega atualiza os dois projetos existentes. Sua responsabilidade principa
 - UUID por relato para impedir duplicação em reenvios, inclusive simultâneos.
 - Token de acesso de 15 minutos e renovação com rotação, limitada a 30 dias por sessão.
 - Compose com banco, migração, serviço de dados e backend.
-- Exemplo de cliente Expo em `backend-reserva/examples/expo-client.ts`.
+- Exemplo de cliente Expo em `backend/examples/expo-client.ts`.
 
 ## Etapas de IA real e testes
 
@@ -76,3 +76,13 @@ Esse ambiente cria banco exclusivo e temporário. Não usa o banco do aplicativo
 ## Compatibilidade
 
 O contrato do serviço de dados permanece em 1.0. O backend passa para 2.0. Login continua aceitando o mesmo JSON, mas retorna refresh token. `POST /v1/incidents` mudou de JSON/base64 para multipart e exige `client_request_id`: o consumidor deve ser atualizado. Bancos SQLite anteriores não são importados automaticamente; a migração entregue cria o novo esquema PostgreSQL. Não apagar uma base antiga antes de planejar/exportar seus registros.
+
+## Identidade e ambientes existentes
+
+O nome oficial é **Terra-Firma**. O backend oficial está em `backend/`; seus caminhos de build, testes e documentação foram atualizados juntos.
+
+Instalações novas usam `terra_firma` como usuário e banco PostgreSQL; o banco isolado dos testes usa `terra_firma_test`. Em uma instalação existente, configure `POSTGRES_USER` e `POSTGRES_DB` no `.env` com os nomes reais já utilizados. Alterar essas variáveis não renomeia usuários ou bancos em um volume inicializado. Preserve os valores e o volume até planejar uma migração específica.
+
+Mantenha a pasta/projeto Compose atual para reutilizar os mesmos volumes. Não apague volumes para aplicar a identidade visual. O arquivo `.env` é local, não deve ser enviado ao GitHub.
+
+A chave local de sessão do exemplo Expo passou a `terra-firma.session.v2`; quem já utilizava esse exemplo deve fazer login novamente. As migrações SQL existentes não tiveram seu conteúdo alterado.

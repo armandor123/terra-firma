@@ -4,7 +4,7 @@ A tecnologia do aplicativo está definida. Esta entrega prepara as APIs e inclui
 
 ## O que o cliente de exemplo faz
 
-`backend-reserva/examples/expo-client.ts` usa fetch e expo-secure-store para:
+`backend/examples/expo-client.ts` usa fetch e expo-secure-store para:
 
 - Fazer login e armazenar o par de tokens em uma única entrada segura.
 - Renovar a sessão uma vez quando uma chamada retorna 401.

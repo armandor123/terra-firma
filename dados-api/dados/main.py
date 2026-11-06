@@ -17,7 +17,7 @@ def create_app(mode=None, api_key=None, firms_key=None, transport=None):
     firms_key = firms_key if firms_key is not None else os.getenv('FIRMS_MAP_KEY','')
     if len(api_key) < 24:
         raise ValueError('Configure DATA_API_KEY com pelo menos 24 caracteres')
-    app = FastAPI(title='Guardiões do Fogo — Dados e Inputs',version='1.0.0')
+    app = FastAPI(title='Terra-Firma — Dados e Inputs',version='1.0.0')
     cache = OrderedDict()
 
     def authorize(x_api_key: str = Header(default='')):

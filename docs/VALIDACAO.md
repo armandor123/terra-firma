@@ -9,7 +9,7 @@ Os 14 testes aprovados na primeira entrega pertenciam ao backend SQLite anterior
 Comando local executado na raiz:
 
 ```bash
-python -m pytest -q dados-api/tests backend-reserva/tests tests_integration.py
+python -m pytest -q dados-api/tests backend/tests tests_integration.py
 ```
 
 ### 11 cenários executados

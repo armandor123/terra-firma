@@ -1,7 +1,7 @@
 {
   "openapi": "3.1.0",
   "info": {
-    "title": "Guardiões do Fogo — Backend reserva",
+    "title": "Terra-Firma — Backend",
     "version": "2.0.0"
   },
   "paths": {

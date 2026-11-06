@@ -179,4 +179,4 @@ Falhas de provedor no serviço de dados continuam como HTTP 200 com envelope `un
 
 ## 5. Contratos OpenAPI
 
-Ambos os projetos incluem `openapi.json`; também disponíveis em `/openapi.json` e `/docs`. O multipart documenta `metadata` como string JSON; seu schema separado está em `backend-reserva/incident-metadata.schema.json`. Algumas saídas de dicionários livres do backend são descritas neste guia.
+Ambos os projetos incluem `openapi.json`; também disponíveis em `/openapi.json` e `/docs`. O multipart documenta `metadata` como string JSON; seu schema separado está em `backend/incident-metadata.schema.json`. Algumas saídas de dicionários livres do backend são descritas neste guia.

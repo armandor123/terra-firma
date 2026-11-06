@@ -1,4 +1,4 @@
-"""Backend independente de reserva: MVP local, sem acionamento de autoridades."""
+"""Backend oficial Terra-Firma: MVP local, sem acionamento de autoridades."""
 import hashlib
 import io
 import json
@@ -58,7 +58,7 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
     store = PhotoStore(photo_dir or os.getenv('PHOTO_DIR','./data/photos'))
     data_url = (data_url or os.getenv('DATA_API_URL','http://127.0.0.1:8001')).rstrip('/')
     data_key = data_key or os.getenv('DATA_API_KEY','')
-    app = FastAPI(title='Guardiões do Fogo — Backend reserva',version='2.0.0')
+    app = FastAPI(title='Terra-Firma — Backend',version='2.0.0')
     dummy_hash = passwords.hash(secrets.token_urlsafe(24))
     login_attempts = {}
 

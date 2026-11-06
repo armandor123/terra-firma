@@ -18,7 +18,7 @@ export type IncidentMetadata = {
 };
 
 export class ApiClient {
-  private readonly key = 'guardioes.session.v2';
+  private readonly key = 'terra-firma.session.v2';
   private sessionEpoch = 0;
   private refreshing: Promise<Tokens> | null = null;
   constructor(private readonly baseUrl: string) {}

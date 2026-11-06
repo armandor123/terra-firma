@@ -3,7 +3,7 @@ import sys
 import time
 from pathlib import Path
 sys.path.insert(0,str(Path(__file__).parent/'dados-api'))
-sys.path.insert(0,str(Path(__file__).parent/'backend-reserva'))
+sys.path.insert(0,str(Path(__file__).parent/'backend'))
 import httpx
 from fastapi.testclient import TestClient
 from dados.main import create_app as create_data

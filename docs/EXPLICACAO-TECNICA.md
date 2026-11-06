@@ -2,7 +2,7 @@
 
 ## Decisões
 
-Mantidos os dois projetos separados: `dados-api` é sua entrega principal e pode ser consumido pelo backend de outra pessoa. `backend-reserva` é a contingência. O aplicativo foi definido como React Native/Expo/TypeScript; ambos os servidores continuam em Python/FastAPI.
+Mantidos os dois projetos separados: `dados-api` é o serviço de integrações e dados; `backend` é o backend oficial do Terra-Firma. O aplicativo foi definido como React Native/Expo/TypeScript; ambos os servidores continuam em Python/FastAPI.
 
 O backend agora exige PostgreSQL, conforme o PRD. Foi removido o código SQLite de runtime. O acesso é feito com psycopg 3 e SQL parametrizado. Essa implementação não utiliza ORM; as alterações de esquema são arquivos SQL versionados e revisáveis.
 
@@ -45,13 +45,13 @@ Permanece independente do banco: valida coordenadas, consulta Open-Meteo e NASA 
 | dados-api/dados/models.py | entradas e envelopes ambientais |
 | dados-api/dados/providers.py | conectores e parsing |
 | dados-api/dados/main.py | API independente de dados |
-| backend-reserva/backend/db.py | conexão PostgreSQL transacional |
-| backend-reserva/backend/migrate.py | migrações e checksums |
-| backend-reserva/backend/migrations/001_initial.sql | esquema PostgreSQL/PostGIS |
-| backend-reserva/backend/storage.py | arquivos privados |
-| backend-reserva/backend/schemas.py | validação de inputs |
-| backend-reserva/backend/main.py | regras de acesso e rotas |
-| backend-reserva/examples/expo-client.ts | referência para o aplicativo |
+| backend/backend/db.py | conexão PostgreSQL transacional |
+| backend/backend/migrate.py | migrações e checksums |
+| backend/backend/migrations/001_initial.sql | esquema PostgreSQL/PostGIS |
+| backend/backend/storage.py | arquivos privados |
+| backend/backend/schemas.py | validação de inputs |
+| backend/backend/main.py | regras de acesso e rotas |
+| backend/examples/expo-client.ts | referência para o aplicativo |
 | compose.test.yaml | ambiente de testes isolado com PostGIS |
 
 ## Validação e próximos passos
