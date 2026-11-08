@@ -521,6 +521,8 @@ Para contribuir, abra uma issue com contexto e resultado esperado, trabalhe em u
 
 Nenhum arquivo `LICENSE` foi identificado na revisão consultada. A licença do código precisa ser definida pelo responsável; não presuma MIT ou outra licença. Fotos, ícones e marcas têm condições próprias.
 
+A Fase 1 registra **MIT como proposta, pendente da decisão dos autores**, em [docs/DECISOES.md](docs/DECISOES.md); ela não foi adotada. O documento também contém uma sugestão de descrição About; nenhum metadado remoto foi alterado.
+
 Documentação técnica complementar:
 
 - [Inputs e contratos](docs/INPUTS-E-CONTRATOS.md)

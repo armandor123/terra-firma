@@ -21,3 +21,17 @@
 - Reutilizar `compose.test.yaml` no CI para evitar duas definições de ambiente divergentes. O banco de testes usa tmpfs, credenciais fictícias próprias, PostGIS e healthcheck; não usa o banco de desenvolvimento. O serviço `tests` recebe `TEST_DATABASE_URL` e aguarda o banco saudável. Falha de conexão/migração gera erro, sem fallback de banco.
 - Executar CI em push, PR e manualmente; limitar permissões a leitura, fixar checkout por SHA, limitar duração, publicar diagnóstico nos logs em falha e limpar containers/volumes sempre. Provedores são controlados nos testes: nenhum segredo NASA/IA necessário.
 - Resultado local: 24 testes descobertos; 11 aprovados, 13 ignorados e 1 aviso na execução. Configuração YAML inspecionada; Docker ausente impede executar Compose aqui. O primeiro resultado remoto do CI ainda precisa ser observado.
+
+### Proposta de licença — PENDENTE, não adotada
+
+**Recomendo avaliar MIT** se a intenção dos autores for permitir reutilização ampla do código do hackathon, inclusive modificações e redistribuição, mantendo os avisos de copyright e de licença. Essa condição consta do [texto oficial MIT publicado pela Open Source Initiative](https://opensource.org/license/mit).
+
+Esta é uma proposta para decisão da equipe/titulares. **Nenhum arquivo `LICENSE` foi criado e nenhuma licença foi aplicada.** Antes de adotar, confirmar concordância dos titulares e identificar corretamente os detentores dos direitos. Caso a equipe queira impor outras condições ao código derivado, revisar a escolha antes da adoção. Fotos, ícones, marcas, dados e dependências mantêm suas condições próprias; a proposta não os relicencia.
+
+Decisão pendente: os titulares aceitam MIT para o código autoral do projeto? Responsável pela aprovação: equipe/titulares do Terra-Firma. Não interpretar esta recomendação como aprovação.
+
+### Sugestão de About — não publicada
+
+> Terra-Firma: MVP de combate ao desmatamento com foco em queimadas. Relatos com fotos, revisão por cooperativas e conectores NASA FIRMS/Open-Meteo. FastAPI + PostGIS. IA de imagem e cruzamento automático ainda planejados.
+
+Texto proposto para substituir a descrição centrada em um aplicativo mobile. Reflete APIs existentes e capacidades futuras, sem alegar detecção real, métricas de acurácia ou interface pronta. A descrição remota não foi alterada.

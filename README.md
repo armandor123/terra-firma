@@ -522,6 +522,8 @@ To contribute, open an issue with context and the expected result, work on a bra
 
 No `LICENSE` file was identified in the reviewed revision. The code license must be defined by the project owner; do not assume MIT or another license. Photographs, icons and trademarks have separate conditions.
 
+Phase 1 records **MIT as a proposal, pending the authors' decision**, in [docs/DECISOES.md](docs/DECISOES.md); it has not been adopted. That document also contains a suggested repository About description; no remote metadata was changed.
+
 Additional technical documentation, currently in Portuguese:
 
 - [Inputs and contracts](docs/INPUTS-E-CONTRATOS.md)
