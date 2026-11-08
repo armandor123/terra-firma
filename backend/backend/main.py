@@ -23,6 +23,7 @@ from PIL import Image, UnidentifiedImageError
 from pwdlib import PasswordHash
 from .db import connect, database_url
 from .storage import PhotoStore
+from .cleanup_photos import PHOTO_LIFECYCLE_LOCK
 from .limits import consume, reset
 from .schemas import Login, Password, Farmer, Property, Incident, Review, Refresh, IncidentDetail
 from .vision import VisionProvider, get_vision_provider
@@ -293,6 +294,7 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
                 return {'id':existing['id'],'replayed':True}
             consume(db_url,'upload',user['id'],20)
             incident_id=uid()
+            db.execute('SELECT pg_advisory_xact_lock_shared(%s)',(PHOTO_LIFECYCLE_LOCK,))
             photo_key=store.put(image)
             # Após autorização e deduplicação; somente JPEG reencodificado sem EXIF.
             # No MVP esta chamada é síncrona e mantém o lock até concluir a transação.
