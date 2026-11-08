@@ -1,5 +1,20 @@
 # Validação — versão 2, PostgreSQL/mobile
 
+## Verificação ambiental externa — 07/11/2026, 22:29 (São Paulo)
+
+O usuário forneceu e autorizou a MAP_KEY, com instrução de não publicá-la. Ela foi usada apenas em memória; não foi gravada em .env, logs, CI ou commits. Código testado: `4852395ebcd9cf875572e2b0181f2e7907fcdd54`. Dados-api foi instanciado em modo live e acessado pelo EnvironmentClient através de ASGI local; as duas consultas externas usaram transporte HTTP real, sem MockTransport.
+
+| Fonte | Resultado observado |
+|---|---|
+| NASA FIRMS / VIIRS_SNPP_NRT | HTTP 200, CSV com cabeçalho esperado, status ok, simulated=false, lista vazia válida |
+| Open-Meteo | HTTP 200, status ok, simulated=false, referência meteorológica 08/11/2026 01:15 UTC |
+
+Consulta de demonstração: latitude −22,9 / longitude −47,06, raio 10 km, 2 dias solicitados ao provedor; regra de evidência retroativa de 24 h. Snapshot normalizado com status ok, evidência no_nearby_hotspot, revisão humana obrigatória. Duração observada da captura: 9,165 s, uma execução; não é benchmark geral. A lista vazia não garante ausência de fogo. Não havia foco positivo nesse retorno para testar associação de uma observação real.
+
+A visão foi deliberadamente simulada (sem foto/modelo externo nessa execução); assim `evidence.simulated=true` sinaliza uma entrada simulada, enquanto weather/hotspots preservam simulated=false. A verificação comprova conectividade, autenticação/CSV, normalização e regras sobre uma consulta real vazia. **Não comprova detecção em campo, associação positiva, integração Gemini + FIRMS + foto real no mesmo incidente ou persistência real de ponta a ponta.** Persistência continua validada pelo CI com fontes controladas.
+
+Evidência sanitizada em [firms-live-check.json](firms-live-check.json), sem chave nem URLs que a contenham. Os padrões DATA_MODE/VISION_MODE do servidor não foram alterados; o modo live foi aplicado apenas ao processo de verificação. Para operação contínua, configurar os segredos no servidor fora do Git.
+
 ## Fase 3 — regras, snapshot e contrato 2.1.0
 
 Base publicada da Fase 2: `c614b6dacafcfbe8aef63c8dd2f1c679f2815eaf`; itens pedidos conferidos, [CI 65 testes aprovado](https://github.com/armandor123/terra-firma/actions/runs/42431574627) e chamada Gemini sintética registrada. Não representa avaliação de detecção em campo.
@@ -10,7 +25,7 @@ Cobertura adicional: regras de janela/raio exatos e inclusivos, futuro, timezone
 
 Resultado remoto confirmado em 07/11/2026, 22:12 (São Paulo): [CI 42433174536](https://github.com/armandor123/terra-firma/actions/runs/42433174536), [job/logs](https://github.com/armandor123/terra-firma/actions/runs/42433174536/job/128586311344), commit `48c9e5536dc153e0c894bad75442cfca1d6f82d2`, branch `feat/fase-3-evidencias`: **102 passed, 1 warning in 15.14s**, nenhum ignorado, saída 0 e limpeza bem-sucedida. Inclui migração/upgrade histórico, persistência/retorno e regras de correlação em PostgreSQL/PostGIS real; o aviso remanescente é de depreciação TestClient/HTTPX.
 
-Nenhuma chamada real NASA/Open-Meteo ou nova chamada Gemini foi feita nesta fase; testes técnicos não medem acurácia de imagem ou de associação espacial/temporal. Startup do Compose de desenvolvimento permanece uma verificação separada da suíte de testes.
+Na execução técnica inicial da Fase 3 não houve nova chamada real NASA/Open-Meteo/Gemini; a consulta ambiental externa posterior está registrada no início deste documento; testes técnicos não medem acurácia de imagem ou de associação espacial/temporal. Startup do Compose de desenvolvimento permanece uma verificação separada da suíte de testes.
 
 ## Verificação externa Gemini — 07/11/2026, 21:47 (São Paulo)
 

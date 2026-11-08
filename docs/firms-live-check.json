@@ -1,0 +1,106 @@
+{
+  "checked_at": "2026-11-08T01:29:41.254046+00:00",
+  "tested_commit": "4852395ebcd9cf875572e2b0181f2e7907fcdd54",
+  "location_context": "Public demonstration coordinates near Campinas; not a user property or a verified photo location.",
+  "elapsed_seconds": 9.165,
+  "http": [
+    {
+      "provider": "Open-Meteo",
+      "http_status": 200
+    },
+    {
+      "provider": "NASA FIRMS",
+      "http_status": 200,
+      "csv_has_required_columns": true,
+      "invalid_key_message": false
+    }
+  ],
+  "environment_snapshot": {
+    "schema_version": "1.0",
+    "status": "ok",
+    "collected_at": "2026-11-08T01:29:41.253742Z",
+    "query": {
+      "latitude": -22.9,
+      "longitude": -47.06,
+      "radius_km": 10.0,
+      "days": 2
+    },
+    "weather": {
+      "schema_version": "1.0",
+      "source": "Open-Meteo",
+      "simulated": false,
+      "status": "ok",
+      "observed_at": "2026-11-08T01:15:00Z",
+      "fetched_at": "2026-11-08T01:29:39.374937Z",
+      "data": {
+        "temperature_c": 20.6,
+        "humidity_pct": 100.0,
+        "wind_kmh": 10.0,
+        "wind_direction_deg": 13.0,
+        "precipitation_mm": 0.0
+      },
+      "warnings": [
+        "Dados de modelo meteorológico; não são medição em sua propriedade."
+      ]
+    },
+    "hotspots": {
+      "schema_version": "1.0",
+      "source": "NASA FIRMS / VIIRS_SNPP_NRT",
+      "simulated": false,
+      "status": "ok",
+      "observed_at": null,
+      "fetched_at": "2026-11-08T01:29:41.252811Z",
+      "data": [],
+      "warnings": [
+        "Foco de calor não confirma incêndio nem representa área queimada.",
+        "Lista vazia não garante ausência de fogo; depende de passagem e cobertura do satélite."
+      ]
+    },
+    "warnings": []
+  },
+  "evidence": {
+    "schema_version": "1.0",
+    "method": "spatial-temporal-context-v1",
+    "reference_at": "2026-11-08T01:29:32.088947Z",
+    "reference_kind": "server_received_at",
+    "parameters": {
+      "radius_km": 10.0,
+      "window_hours": 24.0
+    },
+    "visual_classification": "inconclusive",
+    "visual_simulated": true,
+    "simulated": true,
+    "consistency": "no_nearby_hotspot",
+    "nearby_hotspots": [],
+    "excluded_hotspots_count": 0,
+    "weather": {
+      "schema_version": "1.0",
+      "source": "Open-Meteo",
+      "simulated": false,
+      "status": "ok",
+      "observed_at": "2026-11-08T01:15:00Z",
+      "fetched_at": "2026-11-08T01:29:39.374937Z",
+      "data": {
+        "temperature_c": 20.6,
+        "humidity_pct": 100.0,
+        "wind_kmh": 10.0,
+        "wind_direction_deg": 13.0,
+        "precipitation_mm": 0.0
+      },
+      "warnings": [
+        "Dados de modelo meteorológico; não são medição em sua propriedade."
+      ]
+    },
+    "weather_time_difference_seconds": 872.088947,
+    "human_review_required": true,
+    "warnings": [
+      "Compatibilidade espacial/temporal não confirma incêndio nem valida a imagem.",
+      "Ausência de foco não invalida o relato; indisponibilidade não significa ausência de risco.",
+      "Dados de modelo meteorológico; não são medição em sua propriedade.",
+      "Foco de calor não confirma incêndio nem representa área queimada.",
+      "Lista vazia não garante ausência de fogo; depende de passagem e cobertura do satélite.",
+      "Há entrada simulada; este conjunto não comprova um evento real."
+    ]
+  },
+  "limits": "Real FIRMS/Open-Meteo calls through dados-api ASGI and actual EnvironmentClient; visual analysis deliberately simulated. No photo, real incident persistence or field accuracy validation."
+}

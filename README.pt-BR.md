@@ -1,6 +1,6 @@
 # Terra-Firma
 
-**MVP de relatos com fotos por agricultores e revisão por cooperativas, com conectores ambientais e adaptador Gemini selecionável. Snapshot ambiental por incidente e cruzamento espacial/temporal implementados; avaliação em fotos reais e validação FIRMS real permanecem pendentes.**
+**MVP de relatos com fotos por agricultores e revisão por cooperativas, com conectores ambientais e adaptador Gemini selecionável. Snapshot ambiental por incidente e cruzamento espacial/temporal implementados; consulta FIRMS/Open-Meteo real validada, com avaliação em fotos reais/campo ainda pendente.**
 
 [English](README.md) · **Português (Brasil)** · [Repositório](https://github.com/armandor123/terra-firma)
 
@@ -56,7 +56,7 @@ O Terra-Firma propõe reunir a foto do local, a localização autorizada, os ind
 | Open-Meteo | Acrescentar temperatura, umidade, vento e precipitação ao contexto |
 | Revisão da cooperativa | Avaliar as evidências reunidas, registrar a decisão e preparar encaminhamentos |
 
-A Fase 3 verifica focos próximos dentro de raio/janela temporal retroativa configuráveis e preserva o clima como contexto complementar. A foto pode mostrar algo que o satélite não registrou; a ausência de foco próximo não deve invalidar o relato. Snapshots e regras determinísticas estão implementados; validação FIRMS real/da associação em campo permanece pendente.
+A Fase 3 verifica focos próximos dentro de raio/janela temporal retroativa configuráveis e preserva o clima como contexto complementar. A foto pode mostrar algo que o satélite não registrou; a ausência de foco próximo não deve invalidar o relato. Snapshots e regras determinísticas estão implementados; uma consulta real FIRMS/Open-Meteo retornou dados válidos em um ponto de demonstração; qualidade da associação em campo não avaliada.
 
 ### Público e jornada proposta
 
@@ -445,9 +445,11 @@ Autorização e idempotência são verificadas antes do modelo. Só são enviado
 
 O processamento é síncrono na requisição/transação atual, com timeout HTTP de 20 segundos por operação (conexão: 5 segundos), uma tentativa e nenhum retry automático. Isso acrescenta latência e mantém o lock do banco. Falha do processo após consultar o provedor e antes do commit pode gerar outra chamada cobrada no reenvio; não existe garantia de execução externa exatamente uma vez nem fila durável. O prompt trata texto na foto como conteúdo não confiável; é uma precaução, não uma garantia medida contra injeção de instruções.
 
-A Fase 3 consulta contexto ambiental no envio de novos incidentes com coordenadas, persiste o snapshot e cruza focos em espaço/tempo, preservando clima e análise visual. `GET /v1/properties/{id}/environment` continua como consulta atual separada da propriedade. Horário de captura, worker persistente e índice de risco continuam ausentes. Foto isolada não comprova localização, umidade ou hectares queimados. Ausência de sinais/focos não comprova segurança. Próximos passos: validação autorizada com fotos reais/FIRMS real, avaliação independente com imagens rotuladas e processamento persistente em worker. Nenhuma métrica de acurácia de IA foi medida.
+A Fase 3 consulta contexto ambiental no envio de novos incidentes com coordenadas, persiste o snapshot e cruza focos em espaço/tempo, preservando clima e análise visual. `GET /v1/properties/{id}/environment` continua como consulta atual separada da propriedade. Horário de captura, worker persistente e índice de risco continuam ausentes. Foto isolada não comprova localização, umidade ou hectares queimados. Ausência de sinais/focos não comprova segurança. Próximos passos: validação autorizada com fotos reais/de ponta a ponta em campo, avaliação independente com imagens rotuladas e processamento persistente em worker. Nenhuma métrica de acurácia de IA foi medida.
 
 ## Cruzamento de evidências
+
+**Verificação ambiental real:** NASA FIRMS (`VIIRS_SNPP_NRT`) e Open-Meteo retornaram HTTP 200, `status=ok`, `simulated=false` em coordenadas de demonstração perto de Campinas (10 km, 2 dias solicitados, cruzamento de 24 h). FIRMS retornou lista vazia válida; a evidência ficou `no_nearby_hotspot`. [Snapshot sanitizado](docs/firms-live-check.json). A visão foi deliberadamente simulada nesse teste, por isso o agregado permanece `simulated=true`; isso não torna simuladas as observações ambientais. Nenhuma credencial foi salva, não houve ocorrência real persistida, e lista vazia não comprova segurança. Os padrões do servidor não mudaram; live foi selecionado apenas nessa verificação em memória.
 
 Novos incidentes com coordenadas autorizadas consultam dados-api pelo ponto do incidente e persistem `environment_snapshot` e `evidence`, com fontes, horários de observação/coleta, avisos e indicadores de simulação. Padrões: **10 km / 24 horas anteriores ao recebimento pelo servidor**, inclusivos. O backend solicita 2 dias ao provedor no padrão (margem diária) e aplica a janela exata localmente. São heurísticas de contexto do MVP, não limiares de risco calibrados; veja [decisões](docs/DECISOES.md).
 
@@ -491,7 +493,7 @@ Não inclua `DATA_API_KEY`, `FIRMS_MAP_KEY`, `GEMINI_API_KEY` ou `DATABASE_URL` 
 
 ## Testes e validação
 
-**Fase 3:** [CI com PostGIS aprovou 102 testes, nenhum ignorado e 1 aviso em 15,14 s](https://github.com/armandor123/terra-firma/actions/runs/42433174536), commit testado `48c9e5536dc153e0c894bad75442cfca1d6f82d2`. Inclui migração, snapshots persistidos/parciais, reenvios, autorização e bordas do cruzamento. Provedores são controlados/demo nessa execução; FIRMS real e acurácia da associação em campo continuam sem validação.
+**Fase 3:** [CI com PostGIS aprovou 102 testes, nenhum ignorado e 1 aviso em 15,14 s](https://github.com/armandor123/terra-firma/actions/runs/42433174536), commit testado `48c9e5536dc153e0c894bad75442cfca1d6f82d2`. Inclui migração, snapshots persistidos/parciais, reenvios, autorização e bordas do cruzamento. Provedores eram controlados/demo nessa execução do CI. Uma consulta real posterior FIRMS/Open-Meteo está registrada abaixo; acurácia da associação em campo continua sem validação.
 
 **CI da Fase 2: 65 aprovados, nenhum ignorado e 1 aviso em 10,57 s**, com PostgreSQL/PostGIS. [Execução e logs](https://github.com/armandor123/terra-firma/actions/runs/42429976440), commit testado `01ae50dab2e1649a0317bc1069e12b6558c3c6ec`. A verificação local teve 49 aprovados/16 ignorados sem banco; os 16 foram posteriormente executados no CI. Os testes Gemini usam HTTP controlado, sem inferência real nem métricas de qualidade.
 

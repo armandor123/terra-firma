@@ -36,7 +36,7 @@ As quatro etapas de IA e validação estão detalhadas em [PLANO-IA-E-TESTES.md]
 6. Conectar o app Expo e validar câmera/GPS, offline, sessão e estados de análise.
 7. Atualizar documentação/PRD e avaliar liberação do piloto com revisão humana.
 
-NASA real, fila offline, histórico ambiental longitudinal e push permanecem frentes adicionais. Snapshots por incidente estão implementados; evidências de testes ficam em VALIDACAO.md.
+Associação positiva com FIRMS em campo, fila offline, histórico ambiental longitudinal e push permanecem frentes adicionais. A consulta FIRMS/Open-Meteo real vazia foi validada em firms-live-check.json. Snapshots por incidente estão implementados; evidências de testes ficam em VALIDACAO.md.
 
 ## Produção
 

@@ -78,3 +78,10 @@ Texto proposto para substituir a descrição centrada em um aplicativo mobile. R
 - Migração **nova 002**, sem modificar 001, com campos nullable para preservar histórico; não buscar dados atuais para preencher relatos antigos. Validar envelopes independentemente para que uma falha não apague a outra fonte. Query retornada deve coincidir com a solicitada.
 - Backend/OpenAPI **2.1.0**, resposta tipada de detalhe com versão explícita e campos adicionais nullable. Manter rotas v1, metadata, IA histórica e isolamento existentes; contrato anterior permanece no histórico Git. Dados-api continua 1.0.0 sem mudança de conector.
 - Manter a indisponibilidade explícita do conector FIRMS quando a caixa cruza o antimeridiano; testar preservação parcial e distância entre longitudes +/−180. Não alegar suporte NASA em duas caixas, que não foi implementado nesta etapa.
+
+## 07/11/2026 — Verificação FIRMS real autorizada
+
+- Usar a MAP_KEY fornecida apenas em memória, sem salvar em .env, logs, CI, commits ou URLs publicadas. Não mudar configurações de produção nem padrões demo/simulated.
+- Consultar coordenadas públicas de demonstração perto de Campinas, sem dados de agricultor/propriedade privada, através do dados-api live e EnvironmentClient reais. NASA FIRMS e Open-Meteo responderam HTTP 200 e envelopes ok/simulated=false. FIRMS retornou lista vazia válida, preservada como lista vazia e no_nearby_hotspot, sem afirmar ausência de fogo.
+- Manter visão simulada nessa verificação para testar somente o contexto ambiental; o agregado simulated=true indica essa entrada e não altera a origem real dos dois envelopes. Não reutilizar o resultado da imagem sintética anterior como se tivesse localização verificada.
+- Registrar snapshot sanitizado em firms-live-check.json e limites em VALIDACAO.md. Sem ocorrência persistida ou associação positiva em campo, não declarar o fluxo real completo validado nem medir acurácia. A limitação do antimeridiano permanece.

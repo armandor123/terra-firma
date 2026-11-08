@@ -1,7 +1,7 @@
 
 # Terra-Firma
 
-**An MVP for farmer photo reports and cooperative review, with environmental connectors and a selectable Gemini vision adapter. Incident environmental snapshots and spatial/temporal correlation are implemented; real-photo evaluation and live FIRMS validation remain pending.**
+**An MVP for farmer photo reports and cooperative review, with environmental connectors and a selectable Gemini vision adapter. Incident environmental snapshots and spatial/temporal correlation are implemented; a live FIRMS/Open-Meteo query is validated, while real-photo/field evaluation remains pending.**
 
 **English** · [Português (Brasil)](README.pt-BR.md) · [Repository](https://github.com/armandor123/terra-firma)
 
@@ -57,7 +57,7 @@ Terra-Firma proposes bringing the site photograph, authorized location, AI obser
 | Open-Meteo | Add temperature, humidity, wind and precipitation as context |
 | Cooperative review | Assess the combined evidence, record a decision and prepare follow-up |
 
-Phase 3 checks for nearby hotspots within a configurable radius and backward time window, and preserves weather as additional context. A photograph may capture something the satellite did not record; the absence of a nearby hotspot must not invalidate the report. Snapshots and deterministic rules are implemented; live FIRMS/field-association validation remains pending.
+Phase 3 checks for nearby hotspots within a configurable radius and backward time window, and preserves weather as additional context. A photograph may capture something the satellite did not record; the absence of a nearby hotspot must not invalidate the report. Snapshots and deterministic rules are implemented; a live FIRMS/Open-Meteo query returned valid real data for one demonstration point; field-association quality remains unevaluated.
 
 ### Users and proposed journey
 
@@ -446,9 +446,11 @@ Authorization and idempotency checks run before the model. Only the reencoded JP
 
 Processing is synchronous in the current request/transaction, with HTTP timeouts of 20 seconds per operation (connect: 5 seconds), one attempt and no automatic retry. This adds latency and holds the database lock. A crash after a provider call but before database commit can lead to another billable call on retry; there is no exactly-once external execution guarantee or durable queue. The prompt treats image text as untrusted content; this is a precaution, not a measured prompt-injection guarantee.
 
-Phase 3 queries environmental context on new uploads with coordinates, persists its snapshot and correlates hotspots in space/time while preserving weather and the visual result. `GET /v1/properties/{id}/environment` remains a separate current-property query. Photo capture time, a persistent worker and a risk index remain absent. A single photo cannot establish location, moisture or burned hectares. Lack of signs/hotspots does not establish safety. Next steps are authorized real-photo/live-FIRMS validation, independent labeled-image evaluation and persistent worker processing. No AI accuracy metric has been measured.
+Phase 3 queries environmental context on new uploads with coordinates, persists its snapshot and correlates hotspots in space/time while preserving weather and the visual result. `GET /v1/properties/{id}/environment` remains a separate current-property query. Photo capture time, a persistent worker and a risk index remain absent. A single photo cannot establish location, moisture or burned hectares. Lack of signs/hotspots does not establish safety. Next steps are authorized real-photo/end-to-end field validation, independent labeled-image evaluation and persistent worker processing. No AI accuracy metric has been measured.
 
 ## Evidence correlation
+
+**Live environmental check:** NASA FIRMS (`VIIRS_SNPP_NRT`) and Open-Meteo returned HTTP 200, `status=ok`, `simulated=false` for demonstration coordinates near Campinas (10 km, 2 provider days, 24-hour correlation). FIRMS returned an empty valid list; evidence was `no_nearby_hotspot`. [Sanitized snapshot](docs/firms-live-check.json). Vision was deliberately simulated in this check, so aggregate evidence remains `simulated=true`; this does not make the environmental observations simulated. No credential was saved, no real incident was persisted, and empty results do not establish safety. Server defaults remain unchanged; live mode was selected only for this in-memory verification.
 
 New incidents with authorized coordinates query dados-api using the incident point, then persist `environment_snapshot` and `evidence` with sources, observation/fetch times, warnings and simulation flags. Defaults: **10 km / 24 hours before server receipt**, inclusive. The backend requests 2 provider days by default (daily margin) and filters the exact window itself. These are MVP context heuristics, not calibrated risk thresholds; see [decisions](docs/DECISOES.md).
 
@@ -492,7 +494,7 @@ Never include `DATA_API_KEY`, `FIRMS_MAP_KEY`, `GEMINI_API_KEY` or `DATABASE_URL
 
 ## Testing and validation
 
-**Phase 3:** [CI with PostGIS passed 102 tests, none skipped, 1 warning in 15.14s](https://github.com/armandor123/terra-firma/actions/runs/42433174536), tested commit `48c9e5536dc153e0c894bad75442cfca1d6f82d2`. Includes migration, persisted/partial snapshots, retries, authorization and correlation edge cases. Providers are controlled/demo in this run; live FIRMS and field-association accuracy remain unvalidated.
+**Phase 3:** [CI with PostGIS passed 102 tests, none skipped, 1 warning in 15.14s](https://github.com/armandor123/terra-firma/actions/runs/42433174536), tested commit `48c9e5536dc153e0c894bad75442cfca1d6f82d2`. Includes migration, persisted/partial snapshots, retries, authorization and correlation edge cases. Providers were controlled/demo in that CI run. A subsequent live FIRMS/Open-Meteo query is recorded below; field-association accuracy remains unvalidated.
 
 **Phase 2 CI: 65 passed, none skipped, 1 warning in 10.57s**, with PostgreSQL/PostGIS. [Run and logs](https://github.com/armandor123/terra-firma/actions/runs/42429976440), tested commit `01ae50dab2e1649a0317bc1069e12b6558c3c6ec`. Local verification had 49 passed/16 skipped without a database; all 16 were subsequently exercised in CI. Gemini tests use controlled HTTP responses, without real inference or quality metrics.
 
