@@ -24,9 +24,12 @@ function resetIncident() {
 }
 function clearScreen() {
   user = null; page = 0; selected = null; detailGeneration++; releasePhoto(); resetIncident();
-  $("identity").replaceChildren(); $("incident-list").replaceChildren(); $("detail").replaceChildren();
+  $("identity").replaceChildren(); $("incident-list").replaceChildren();
+  $("detail").replaceChildren(node("p", "Selecione um incidente para ver as evidências.", "muted"));
   $("temporary-password").textContent = "";
-  $("login-form").reset(); $("password-form").reset();
+  for (const id of ["login-form", "password-form", "farmer-form", "property-form"]) $(id).reset();
+  $("property-form").elements.farmer_id.replaceChildren();
+  $("incident-form").elements.property_id.replaceChildren();
   $("workspace").hidden = true; $("password-view").hidden = true; $("login-view").hidden = false;
 }
 function fail(error) {

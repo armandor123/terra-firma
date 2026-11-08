@@ -106,6 +106,9 @@ def test_full_photo_evidence_and_human_review_journey(page,admin):
     page.locator('#property-form button').click()
     expect(page.locator('#notice')).to_contain_text('Propriedade cadastrada')
     page.locator('#logout').click()
+    expect(page.locator('#login-view')).to_be_visible()
+    expect(page.locator('#property-form [name=farmer_id] option')).to_have_count(0)
+    expect(page.locator('#temporary-password')).to_have_text('')
     login(page,username,temp)
     change_password(page,temp,NEW_PASSWORD)
     login(page,username,NEW_PASSWORD)
@@ -137,6 +140,7 @@ def test_full_photo_evidence_and_human_review_journey(page,admin):
     assert httpx.get(BASE+f'/v1/incidents/{iid}/photo').status_code==401
     page.locator('#logout').click()
     expect(page.locator('#detail img')).to_have_count(0)
+    expect(page.locator('#incident-form [name=property_id] option')).to_have_count(0)
     login(page,*admin)
     page.locator('.incident-card').filter(has_text=description).click()
     for status in ['under_review','verified','escalated']:
