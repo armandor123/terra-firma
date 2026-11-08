@@ -141,7 +141,7 @@ A interface acessa o backend. O backend autoriza o acesso à propriedade e consu
 | `backend/examples/expo-client.ts` | Cliente de integração de referência |
 | `dados-api/dados/` | Aplicação, modelos e provedores ambientais |
 | `dados-api/openapi.json`, `example-context.json` | Contrato 1.0.0 e exemplo do modo demo |
-| `backend/tests/`, `dados-api/tests/`, `tests_integration.py` | Testes locais e de integração |
+| `backend/tests/`, `dados-api/tests/`, `tests/` | Testes locais e de integração |
 | `docs/` | Contratos detalhados, integração mobile, demonstração, validação e evolução |
 
 O kit `identidade-visual/` foi fornecido separadamente. Os caminhos desse kit só estarão disponíveis no GitHub depois de sua inclusão no repositório.
@@ -462,12 +462,12 @@ docker compose -f compose.test.yaml down
 Alternativa com dependências instaladas, na raiz do repositório:
 
 ```bash
-python -m pytest -q dados-api/tests backend/tests tests_integration.py
+python -m pytest -ra -q
 ```
 
 Nesse segundo fluxo, configure `TEST_DATABASE_URL` para um banco **exclusivo de testes** com PostGIS se quiser executar os cenários de banco. Sem a variável, eles são ignorados explicitamente. Os cenários criam e removem schemas próprios.
 
-A execução da Fase 0 em 07/11/2026 retornou **11 aprovados, 13 ignorados e 1 aviso em 0,98 s**, exit 0. Todos os 13 skips decorreram da ausência de `TEST_DATABASE_URL`; isso **não aprova a suíte completa**. Os dois comandos Compose falharam antes de iniciar, com `docker: command not found`. Veja [docs/AUDITORIA.md](docs/AUDITORIA.md) para evidências por arquivo/linha e [docs/VALIDACAO.md](docs/VALIDACAO.md) para o histórico. O arquivo versionado `resultado-testes.txt` informa 24 aprovados, mas não identifica commit/ambiente; não é evidência desta auditoria. Docker/PostGIS, NASA real, execução em aparelho e qualidade de IA permanecem sem validação aqui. Os testes SQLite anteriores não comprovam esta versão PostgreSQL. Informe `tests_integration.py` explicitamente no comando acima; seu nome está fora dos padrões de descoberta padrão do pytest.
+A execução da Fase 0 em 07/11/2026 retornou **11 aprovados, 13 ignorados e 1 aviso em 0,98 s**, exit 0. Todos os 13 skips decorreram da ausência de `TEST_DATABASE_URL`; isso **não aprova a suíte completa**. Os dois comandos Compose falharam antes de iniciar, com `docker: command not found`. Veja [docs/AUDITORIA.md](docs/AUDITORIA.md) para evidências por arquivo/linha e [docs/VALIDACAO.md](docs/VALIDACAO.md) para o histórico. O antigo `resultado-testes.txt` informava 24 aprovados sem identificar commit/ambiente; a Fase 1 o removeu do versionamento e o adicionou ao `.gitignore`. Docker/PostGIS, NASA real, execução em aparelho e qualidade de IA permanecem sem validação aqui. Os testes SQLite anteriores não comprovam esta versão PostgreSQL. A Fase 1 moveu a integração para `tests/test_integration.py` e configurou `pytest.ini` para descobrir as três pastas de testes com o comando acima.
 
 ## Identidade visual e créditos
 

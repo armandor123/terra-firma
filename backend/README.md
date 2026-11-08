@@ -64,7 +64,7 @@ Na raiz, `compose.test.yaml` executa todos os testes com um PostgreSQL/PostGIS i
 
 ```bash
 export TEST_DATABASE_URL='postgresql://usuario:senha@127.0.0.1:5432/terra_firma_test'
-python -m pytest -q backend/tests tests_integration.py
+python -m pytest -q backend/tests tests/test_integration.py
 ```
 
 Execute esse comando na raiz. Cada cenário cria/remove somente seu próprio schema com nome aleatório. O banco precisa permitir criar schemas e ter PostGIS. Sem `TEST_DATABASE_URL`, os cenários de banco são explicitamente ignorados, não aprovados.

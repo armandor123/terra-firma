@@ -142,7 +142,7 @@ The interface calls the backend. The backend authorizes property access and call
 | `backend/examples/expo-client.ts` | Reference integration client |
 | `dados-api/dados/` | Environmental application, models and providers |
 | `dados-api/openapi.json`, `example-context.json` | Contract 1.0.0 and demo output example |
-| `backend/tests/`, `dados-api/tests/`, `tests_integration.py` | Local and integration tests |
+| `backend/tests/`, `dados-api/tests/`, `tests/` | Local and integration tests |
 | `docs/` | Detailed contracts, mobile integration, demo, validation and roadmap |
 
 The `identidade-visual/` kit was supplied separately. Its paths will only be available on GitHub after the kit is added to the repository.
@@ -463,12 +463,12 @@ docker compose -f compose.test.yaml down
 Alternatively, with dependencies installed, from the repository root:
 
 ```bash
-python -m pytest -q dados-api/tests backend/tests tests_integration.py
+python -m pytest -ra -q
 ```
 
 For this second workflow, configure `TEST_DATABASE_URL` to a **dedicated test database** with PostGIS to run database scenarios. Without it, those scenarios are explicitly skipped. Scenarios create and remove their own schemas.
 
-The Phase 0 run on November 7, 2026 returned **11 passed, 13 skipped, 1 warning in 0.98s**, exit 0. All 13 skips were caused by missing `TEST_DATABASE_URL`; this is **not a full-suite pass**. Both Compose commands failed before startup with `docker: command not found`. See [docs/AUDITORIA.md](docs/AUDITORIA.md) for file/line evidence and [docs/VALIDACAO.md](docs/VALIDACAO.md) for validation history. The tracked `resultado-testes.txt` reports 24 passed but lacks commit/environment provenance; it is not evidence of this audit. Docker/PostGIS, live NASA access, device execution and AI quality remain unvalidated here. Previous SQLite-backend tests do not validate this PostgreSQL version. Pass `tests_integration.py` explicitly as above; its name is outside default pytest discovery patterns.
+The Phase 0 run on November 7, 2026 returned **11 passed, 13 skipped, 1 warning in 0.98s**, exit 0. All 13 skips were caused by missing `TEST_DATABASE_URL`; this is **not a full-suite pass**. Both Compose commands failed before startup with `docker: command not found`. See [docs/AUDITORIA.md](docs/AUDITORIA.md) for file/line evidence and [docs/VALIDACAO.md](docs/VALIDACAO.md) for validation history. The former `resultado-testes.txt` reported 24 passed without commit/environment provenance; Phase 1 removed it from version control and added it to `.gitignore`. Docker/PostGIS, live NASA access, device execution and AI quality remain unvalidated here. Previous SQLite-backend tests do not validate this PostgreSQL version. Phase 1 moved the integration to `tests/test_integration.py` and configured `pytest.ini` to discover all three test directories with the command above.
 
 ## Visual identity and credits
 

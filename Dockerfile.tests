@@ -4,4 +4,4 @@ COPY backend/requirements.txt /tmp/backend.txt
 COPY dados-api/requirements.txt /tmp/dados.txt
 RUN pip install --no-cache-dir -r /tmp/backend.txt -r /tmp/dados.txt
 COPY . .
-CMD ["python", "-m", "pytest", "-q", "dados-api/tests", "backend/tests", "tests_integration.py"]
+CMD ["python", "-m", "pytest", "-ra", "-q"]
