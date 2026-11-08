@@ -13,6 +13,8 @@ The central idea is for **AI to analyze photographs submitted by farmers for sig
 
 > **Phase 0 audit — November 7, 2026:** Source inspected at `1825555f9a714ffab131a3e7796f4223bb753944`. The local suite returned **11 passed, 13 skipped, 1 warning**. Both Compose commands were attempted but Docker is unavailable; PostgreSQL/PostGIS scenarios remain unexecuted in this audit. **Phase 0 is blocked pending full environment and database validation.** See [audit and evidence](docs/AUDITORIA.md) and [decisions](docs/DECISOES.md). No application code changed.
 
+> **CI update — November 7, 2026:** [Full PostGIS suite passed](https://github.com/armandor123/terra-firma/actions/runs/42428442702): **24 tests passed, none skipped**, with one TestClient deprecation warning. Changes are published on `chore/fase-1`; development-stack startup remains unverified. AI remains simulated and automatic evidence cross-referencing is not implemented.
+
 ## Contents
 
 - [Overview](#overview)
@@ -73,7 +75,7 @@ Combating deforestation is the project's purpose. Current scope does not include
 
 ## Scope and feature status
 
-The statuses below were checked against source code during Phase 0. Implementation does not imply successful database or production validation: the 13 PostgreSQL-dependent scenarios remain unexecuted in this audit. The presentation describes the product proposal and does not independently demonstrate implementation.
+The statuses below were checked against source code during Phase 0. The 13 PostgreSQL-dependent scenarios were subsequently exercised successfully in CI; see Testing and validation. This does not establish production readiness. The presentation describes the product proposal and does not independently demonstrate implementation.
 
 | Feature | Current status |
 |---|---|
@@ -453,7 +455,7 @@ Never include `DATA_API_KEY`, `FIRMS_MAP_KEY` or `DATABASE_URL` in the applicati
 
 ## Testing and validation
 
-GitHub Actions is configured in [`.github/workflows/tests.yml`](.github/workflows/tests.yml) for pushes, pull requests and manual runs. It uses the isolated `compose.test.yaml` database (`postgis/postgis:16-3.7`), waits for its healthcheck, builds the test image and runs the entire suite. The test service exit code determines the job result; failure diagnostics and container cleanup are configured. No provider credentials are required. **The workflow has not yet run on GitHub; its presence is not a passing CI result.**
+GitHub Actions is configured in [`.github/workflows/tests.yml`](.github/workflows/tests.yml) for pushes, pull requests and manual runs. It uses the isolated `compose.test.yaml` database (`postgis/postgis:16-3.7`), waits for its healthcheck, builds the test image and runs the entire suite. The test service exit code determines the job result; failure diagnostics and container cleanup are configured. No provider credentials are required. **CI passed on November 7, 2026 (São Paulo): 24 passed, no skipped tests, 1 warning in 6.49s.** [Run and logs](https://github.com/armandor123/terra-firma/actions/runs/42428442702), tested commit `4eb09cc86ed3101e1335f180fb84a6439270c714`. All PostgreSQL-dependent scenarios ran against the isolated PostGIS database. The development Compose stack and live providers were not exercised by this workflow.
 
 Full environment with a dedicated temporary database:
 
@@ -470,7 +472,7 @@ python -m pytest -ra -q
 
 For this second workflow, configure `TEST_DATABASE_URL` to a **dedicated test database** with PostGIS to run database scenarios. Without it, those scenarios are explicitly skipped. Scenarios create and remove their own schemas.
 
-Phase 1 local verification on November 7, 2026: the default collection found **24 tests**, including the moved integration; execution returned **11 passed, 13 skipped, 1 warning in 0.96s**, exit 0. YAML/Compose configuration and local README links were checked statically. Docker remains unavailable locally, so PostgreSQL/PostGIS and CI execution are still pending. Root `conftest.py` remains shared pytest configuration for all three test directories.
+Phase 1 local verification on November 7, 2026: the default collection found **24 tests**, including the moved integration; execution returned **11 passed, 13 skipped, 1 warning in 0.96s**, exit 0. YAML/Compose configuration and local README links were checked statically. Docker remains unavailable locally; the subsequent GitHub Actions run documented above validates the PostgreSQL/PostGIS suite remotely. Root `conftest.py` remains shared pytest configuration for all three test directories.
 
 The Phase 0 run on November 7, 2026 returned **11 passed, 13 skipped, 1 warning in 0.98s**, exit 0. All 13 skips were caused by missing `TEST_DATABASE_URL`; this is **not a full-suite pass**. Both Compose commands failed before startup with `docker: command not found`. See [docs/AUDITORIA.md](docs/AUDITORIA.md) for file/line evidence and [docs/VALIDACAO.md](docs/VALIDACAO.md) for validation history. The former `resultado-testes.txt` reported 24 passed without commit/environment provenance; Phase 1 removed it from version control and added it to `.gitignore`. Docker/PostGIS, live NASA access, device execution and AI quality remain unvalidated here. Previous SQLite-backend tests do not validate this PostgreSQL version. Phase 1 moved the integration to `tests/test_integration.py` and configured `pytest.ini` to discover all three test directories with the command above.
 

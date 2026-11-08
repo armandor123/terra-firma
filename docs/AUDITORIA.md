@@ -5,6 +5,10 @@ Base inspecionada: `1825555f9a714ffab131a3e7796f4223bb753944` (`main`).
 
 **Fase 0 parcialmente executada; bloqueada para aprovação por falta de Docker e PostgreSQL/PostGIS.** Não houve alteração de código de aplicação, testes, migração, dependências ou Compose. A auditoria não implementa IA nem cruzamento ambiental.
 
+## Evidência posterior — 07/11/2026, 21:09 (São Paulo)
+
+[CI 42428442702](https://github.com/armandor123/terra-firma/actions/runs/42428442702) executou `compose.test.yaml` no commit publicado `4eb09cc86ed3101e1335f180fb84a6439270c714`: **24 passed, 1 warning in 6.49s**, nenhum skip, saída 0. Os 13 cenários PostgreSQL antes pendentes passaram com banco real. Veja `VALIDACAO.md` para ambiente e limites. O startup do Compose de desenvolvimento ainda não foi exercitado; esta evidência não aprova integralmente a Fase 0. A tabela abaixo permanece histórica e aponta para a base declarada no início.
+
 ## Método e limites
 
 Leitura dos dois READMEs da raiz, de todos os documentos em `docs/`, dos módulos, testes, migração, configurações, exemplos e contratos em `backend/` e `dados-api/`, além de `conftest.py`, `tests_integration.py`, `pytest.ini`, Dockerfiles e Compose. Os contratos JSON foram carregados e comparados com os modelos/apps atuais. Não havia `AGENTS.md` no checkout.

@@ -12,6 +12,8 @@ A ideia central é permitir que **a IA analise fotos enviadas pelo produtor para
 
 > **Auditoria da Fase 0 — 07/11/2026:** Código inspecionado em `1825555f9a714ffab131a3e7796f4223bb753944`. A suíte local retornou **11 aprovados, 13 ignorados e 1 aviso**. Os dois comandos Compose foram tentados, mas Docker não está disponível; os cenários PostgreSQL/PostGIS continuam sem execução nesta auditoria. **Fase 0 bloqueada até a validação integral do ambiente e do banco.** Veja [auditoria e evidências](docs/AUDITORIA.md) e [decisões](docs/DECISOES.md). Nenhum código de aplicação foi alterado.
 
+> **Atualização de CI — 07/11/2026:** [Suíte completa com PostGIS aprovada](https://github.com/armandor123/terra-firma/actions/runs/42428442702): **24 testes aprovados, nenhum ignorado**, com um aviso de depreciação do TestClient. Mudanças publicadas em `chore/fase-1`; inicialização do ambiente de desenvolvimento ainda não verificada. A IA continua simulada e o cruzamento automático não está implementado.
+
 ## Sumário
 
 - [Visão geral](#visão-geral)
@@ -72,7 +74,7 @@ O combate ao desmatamento é a finalidade do projeto. O escopo atual não inclui
 
 ## Escopo e estado das funcionalidades
 
-Os estados abaixo foram conferidos contra o código na Fase 0. Implementação não equivale a validação de banco ou produção: os 13 cenários dependentes de PostgreSQL continuam sem execução nesta auditoria. A apresentação descreve a proposta de produto e não comprova, por si só, implementação.
+Os estados abaixo foram conferidos contra o código na Fase 0. Os 13 cenários dependentes de PostgreSQL foram posteriormente executados com sucesso no CI; veja Testes e validação. Isso não comprova prontidão para produção. A apresentação descreve a proposta de produto e não comprova, por si só, implementação.
 
 | Funcionalidade | Estado atual |
 |---|---|
@@ -452,7 +454,7 @@ Não inclua `DATA_API_KEY`, `FIRMS_MAP_KEY` ou `DATABASE_URL` no app; variáveis
 
 ## Testes e validação
 
-O GitHub Actions está configurado em [`.github/workflows/tests.yml`](.github/workflows/tests.yml) para pushes, pull requests e execução manual. Ele utiliza o banco isolado de `compose.test.yaml` (`postgis/postgis:16-3.7`), aguarda o healthcheck, constrói a imagem de testes e executa a suíte completa. O exit code do serviço de testes determina o resultado do job; há diagnóstico em falha e limpeza dos containers. Não exige credenciais de provedores. **O workflow ainda não foi executado no GitHub; sua presença não significa CI aprovado.**
+O GitHub Actions está configurado em [`.github/workflows/tests.yml`](.github/workflows/tests.yml) para pushes, pull requests e execução manual. Ele utiliza o banco isolado de `compose.test.yaml` (`postgis/postgis:16-3.7`), aguarda o healthcheck, constrói a imagem de testes e executa a suíte completa. O exit code do serviço de testes determina o resultado do job; há diagnóstico em falha e limpeza dos containers. Não exige credenciais de provedores. **CI aprovado em 07/11/2026 (São Paulo): 24 aprovados, nenhum teste ignorado e 1 aviso em 6,49 s.** [Execução e logs](https://github.com/armandor123/terra-firma/actions/runs/42428442702), commit testado `4eb09cc86ed3101e1335f180fb84a6439270c714`. Todos os cenários PostgreSQL foram executados contra o banco PostGIS isolado. O ambiente Compose de desenvolvimento e provedores reais não foram exercitados por este workflow.
 
 Ambiente completo com banco temporário exclusivo:
 
@@ -469,7 +471,7 @@ python -m pytest -ra -q
 
 Nesse segundo fluxo, configure `TEST_DATABASE_URL` para um banco **exclusivo de testes** com PostGIS se quiser executar os cenários de banco. Sem a variável, eles são ignorados explicitamente. Os cenários criam e removem schemas próprios.
 
-Verificação local da Fase 1 em 07/11/2026: a descoberta padrão encontrou **24 testes**, incluindo a integração movida; a execução retornou **11 aprovados, 13 ignorados e 1 aviso em 0,96 s**, exit 0. YAML/configuração Compose e links locais dos READMEs foram conferidos estaticamente. Docker continua indisponível aqui; PostgreSQL/PostGIS e execução do CI permanecem pendentes. O `conftest.py` da raiz permanece como configuração compartilhada do pytest para as três pastas de testes.
+Verificação local da Fase 1 em 07/11/2026: a descoberta padrão encontrou **24 testes**, incluindo a integração movida; a execução retornou **11 aprovados, 13 ignorados e 1 aviso em 0,96 s**, exit 0. YAML/configuração Compose e links locais dos READMEs foram conferidos estaticamente. Docker continua indisponível aqui; a execução posterior do GitHub Actions documentada acima valida remotamente a suíte PostgreSQL/PostGIS. O `conftest.py` da raiz permanece como configuração compartilhada do pytest para as três pastas de testes.
 
 A execução da Fase 0 em 07/11/2026 retornou **11 aprovados, 13 ignorados e 1 aviso em 0,98 s**, exit 0. Todos os 13 skips decorreram da ausência de `TEST_DATABASE_URL`; isso **não aprova a suíte completa**. Os dois comandos Compose falharam antes de iniciar, com `docker: command not found`. Veja [docs/AUDITORIA.md](docs/AUDITORIA.md) para evidências por arquivo/linha e [docs/VALIDACAO.md](docs/VALIDACAO.md) para o histórico. O antigo `resultado-testes.txt` informava 24 aprovados sem identificar commit/ambiente; a Fase 1 o removeu do versionamento e o adicionou ao `.gitignore`. Docker/PostGIS, NASA real, execução em aparelho e qualidade de IA permanecem sem validação aqui. Os testes SQLite anteriores não comprovam esta versão PostgreSQL. A Fase 1 moveu a integração para `tests/test_integration.py` e configurou `pytest.ini` para descobrir as três pastas de testes com o comando acima.
 

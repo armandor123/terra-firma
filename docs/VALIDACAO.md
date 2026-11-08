@@ -1,5 +1,21 @@
 # Validação — versão 2, PostgreSQL/mobile
 
+## Execução remota confirmada — 07/11/2026, 21:09 (São Paulo)
+
+- Branch publicada: `chore/fase-1`; `main` não foi alterada.
+- Commit testado: `4eb09cc86ed3101e1335f180fb84a6439270c714` (árvore idêntica à entrega local `0aa066b`). Os SHAs dos commits publicados diferem porque foram criados pela API GitHub; as árvores foram comparadas antes da publicação.
+- Workflow: `Tests with PostGIS`, evento push, [execução 42428442702](https://github.com/armandor123/terra-firma/actions/runs/42428442702), [job/logs](https://github.com/armandor123/terra-firma/actions/runs/42428442702/job/128571741094).
+- Ambiente observado: runner Ubuntu 24.04.5, imagem de testes baseada em Python 3.12; PostgreSQL **16.15** iniciado nos logs, com extensões PostGIS carregadas pela imagem configurada `postgis/postgis:16-3.7`.
+- Comando: `docker compose -f compose.test.yaml up --build --abort-on-container-exit --exit-code-from tests`.
+- Resultado: **24 passed, 1 warning in 6.49s**, nenhum teste ignorado, container `tests` encerrado com código 0; etapa de testes e limpeza concluídas com sucesso.
+- O aviso remanescente é `StarletteDeprecationWarning` do TestClient/HTTPX. Não houve falha que exigisse correção de código.
+
+Os 13 cenários anteriormente ignorados foram executados: inclui migração/reexecução, PostGIS, isolamento, revisão, fotos, idempotência e concorrência, sessões/refresh e integração backend ↔ dados. A limitação local de Docker foi superada para **a suíte de banco** por execução remota real.
+
+O workflow não inicia o Compose de desenvolvimento, não cria o usuário de bootstrap nem verifica as APIs em processos separados com `/health`. A exigência de startup do ambiente de desenvolvimento da Fase 0 continua pendente. Não houve chamada real a NASA/Open-Meteo ou modelo de imagem: os provedores permanecem controlados nos testes e a IA de aplicação continua simulada. Nenhuma acurácia de IA foi medida.
+
+As seções seguintes preservam o histórico anterior à publicação; suas pendências devem ser lidas em conjunto com esta evidência mais recente.
+
 ## Fase 1 — 07/11/2026
 
 Mudanças partem de `189311d` (Fase 0). A integração agora está em `tests/test_integration.py`; `pytest.ini` declara `backend/tests`, `dados-api/tests` e `tests` como diretórios de descoberta. O Dockerfile de testes utiliza o mesmo comando padrão do pytest. `conftest.py` permanece na raiz como configuração compartilhada, não como teste solto.
@@ -9,7 +25,7 @@ Mudanças partem de `189311d` (Fase 0). A integração agora está em `tests/tes
 - `docker compose -f compose.test.yaml up --build --abort-on-container-exit --exit-code-from tests`: falhou com `docker: command not found` (127). Nenhum banco/container iniciado.
 - YAML do workflow/Compose inspecionado por parser; conferidos gatilhos, permissões, comando da suíte, URL PostgreSQL, imagem PostGIS e dependência do healthcheck. `git diff --check` e links relativos dos READMEs conferidos.
 
-O workflow `.github/workflows/tests.yml` está configurado para executar a suíte completa com PostGIS em push/PR/manual, mostrar logs em falha e limpar containers sempre. **Não houve execução remota do Actions, push, alteração de About ou adoção de licença.** O primeiro resultado real do CI deve ser registrado pelo SHA/URL da execução; não há comprovação de 24 testes aprovados nesta fase.
+O workflow `.github/workflows/tests.yml` está configurado para executar a suíte completa com PostGIS em push/PR/manual, mostrar logs em falha e limpar containers sempre. Na verificação local inicial não houve execução remota do Actions ou push. A execução remota posterior está registrada no início deste documento. About e licença continuam sem alteração.
 
 `resultado-testes.txt` deixou de ser versionado e passou a ser ignorado. Referências a esse arquivo e aos caminhos antigos nas seções históricas abaixo e em `AUDITORIA.md` descrevem a revisão auditada, não a estrutura atual.
 

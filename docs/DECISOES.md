@@ -20,7 +20,7 @@
 - Usar `python -m pytest -ra -q` como comando canônico, com as três pastas em `testpaths`. Remover do teste movido as alterações manuais de `sys.path`; o `pythonpath` existente no pytest.ini resolve os dois serviços.
 - Reutilizar `compose.test.yaml` no CI para evitar duas definições de ambiente divergentes. O banco de testes usa tmpfs, credenciais fictícias próprias, PostGIS e healthcheck; não usa o banco de desenvolvimento. O serviço `tests` recebe `TEST_DATABASE_URL` e aguarda o banco saudável. Falha de conexão/migração gera erro, sem fallback de banco.
 - Executar CI em push, PR e manualmente; limitar permissões a leitura, fixar checkout por SHA, limitar duração, publicar diagnóstico nos logs em falha e limpar containers/volumes sempre. Provedores são controlados nos testes: nenhum segredo NASA/IA necessário.
-- Resultado local: 24 testes descobertos; 11 aprovados, 13 ignorados e 1 aviso na execução. Configuração YAML inspecionada; Docker ausente impede executar Compose aqui. O primeiro resultado remoto do CI ainda precisa ser observado.
+- Resultado local: 24 testes descobertos; 11 aprovados, 13 ignorados e 1 aviso na execução. Configuração YAML inspecionada; Docker ausente impede executar Compose aqui. O resultado remoto posterior foi observado: 24 aprovados, nenhum ignorado e 1 aviso em 6,49 s; [execução 42428442702](https://github.com/armandor123/terra-firma/actions/runs/42428442702), commit `4eb09cc86ed3101e1335f180fb84a6439270c714`.
 
 ### Proposta de licença — PENDENTE, não adotada
 
@@ -35,3 +35,9 @@ Decisão pendente: os titulares aceitam MIT para o código autoral do projeto? R
 > Terra-Firma: MVP de combate ao desmatamento com foco em queimadas. Relatos com fotos, revisão por cooperativas e conectores NASA FIRMS/Open-Meteo. FastAPI + PostGIS. IA de imagem e cruzamento automático ainda planejados.
 
 Texto proposto para substituir a descrição centrada em um aplicativo mobile. Reflete APIs existentes e capacidades futuras, sem alegar detecção real, métricas de acurácia ou interface pronta. A descrição remota não foi alterada.
+
+## 07/11/2026 — Publicação e execução autorizadas
+
+- Após autorização do usuário e conexão ao GitHub, publicar as Fases 0/1 em `chore/fase-1`, preservando `main`, licença e About.
+- Publicação por objetos Git via API; preservar os cinco commits lógicos e comparar cada árvore com a revisão local. SHAs de commits mudam; conteúdo não muda.
+- Registrar a execução real em `VALIDACAO.md` e nos dois READMEs. A suíte integral de banco passou; startup do Compose de desenvolvimento permanece pendente.
