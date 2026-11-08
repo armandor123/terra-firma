@@ -1,5 +1,7 @@
 # Plano de integração da IA real e testes
 
+> Documento de referência/histórico. Para o estado entregue nas Fases 4–5, use [README.pt-BR](../README.pt-BR.md), [INTERFACE](INTERFACE.md), [OPERACAO](OPERACAO.md) e [auditoria atual](AUDITORIA.md). Propostas anteriores não são funcionalidades adicionais implementadas.
+
 > Plano histórico de 06/11. A Fase 2 implementa visão síncrona, adaptadores e saída estruturada; uma chamada Gemini real sintética foi validada (vision-live-check.json). A Fase 3 acrescenta snapshot/cruzamento determinístico por incidente em [CRUZAMENTO.md](CRUZAMENTO.md). Qualidade em fotos reais, validação FIRMS em campo e worker continuam pendentes. O estado implementado e as decisões atuais estão em [VISAO.md](VISAO.md), [DECISOES.md](DECISOES.md) e [VALIDACAO.md](VALIDACAO.md); o restante abaixo preserva o plano original.
 
 Atualizado em 06/11/2026. Este documento incorpora as etapas aprovadas para evolução do Terra-Firma. É um plano de execução: não declara IA integrada, modelo avaliado ou testes adicionais aprovados.

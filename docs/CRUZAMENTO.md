@@ -54,7 +54,7 @@ A regra de distância funciona entre +180 e −180 e é testada também nos polo
 
 OpenAPI gerado: [`backend/openapi.json`](../backend/openapi.json), `info.version=2.1.0`; dado ambiental continua contrato 1.0.0. A mudança é aditiva, mantém caminhos `/v1` e o metadata de upload. O contrato anterior 2.0.0 permanece no histórico Git da base `c614b6dacafcfbe8aef63c8dd2f1c679f2815eaf`, no mesmo caminho. Essa revisão documenta explicitamente o significado dos campos novos, sem converter registros antigos.
 
-Antes de iniciar o backend atualizado, executar migrações. No Compose: `docker compose up --build -d` (migrador antes do backend). Em execução direta: `python -m backend.migrate`. Configurar o mesmo `DATA_API_KEY` em backend/dados.
+Antes de iniciar o backend atualizado, executar migrações. No Compose: `docker compose up --build -d` (migrador antes do backend). Em execução direta: `python -m backend.migrate` no ambiente privilegiado, com APP_DATABASE_USER/APP_DATABASE_PASSWORD; depois usar URL DML na API, conforme [OPERACAO.md](OPERACAO.md). Configurar o mesmo `DATA_API_KEY` em backend/dados.
 
 ## Validação e escopo restante
 

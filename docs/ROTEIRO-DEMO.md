@@ -1,4 +1,6 @@
-# Roteiro de demonstração — versão mobile/PostgreSQL
+# Roteiro de demonstração — web/PostgreSQL
+
+O roteiro canônico de navegador (bootstrap → foto → snapshot demo → revisão) está em [INTERFACE.md](INTERFACE.md), com validação automatizada em `python3 scripts/test_ui.py`. Para configurar e verificar live com foto autorizada, veja [OPERACAO.md](OPERACAO.md); o fluxo live completo ainda não foi executado. Os exemplos abaixo são alternativas manuais de API.
 
 ## 1. Preparação
 

@@ -1,582 +1,120 @@
 # Terra-Firma
 
-**MVP de relatos com fotos por agricultores e revisão por cooperativas, com conectores ambientais e adaptador Gemini selecionável. Snapshot ambiental por incidente e cruzamento espacial/temporal implementados; consulta FIRMS/Open-Meteo real validada, com avaliação em fotos reais/campo ainda pendente.**
+[English](README.md) · [Repositório](https://github.com/armandor123/terra-firma)
 
-[English](README.md) · **Português (Brasil)** · [Repositório](https://github.com/armandor123/terra-firma)
+MVP de relatos com fotos por agricultores e revisão por cooperativas. Interface web estática servida por Nginx, backend FastAPI e PostgreSQL/PostGIS. Visão selecionável (`simulated` ou Gemini); novos incidentes recebem snapshot ambiental e evidência determinística de satélite/clima. **A IA nunca confirma incêndio sozinha. A revisão humana continua obrigatória.**
 
-Projeto do **Grupo 13**, desenvolvido para o desafio **Reboot the Earth 2026**. O Terra-Firma tem como objetivo apoiar o combate ao desmatamento, com foco na prevenção e no acompanhamento de queimadas e incêndios florestais.
+Grupo 13, Reboot the Earth 2026: Feliphe Coutinho, Taciára Mendes, Victor Hinoue e Armando de Almeida. Projeto independente de participantes; marcas pertencem aos seus titulares.
 
-A ideia central é permitir que **a IA analise fotos enviadas pelo produtor para identificar indícios de focos de incêndio, fumaça, mata seca e vegetação queimada**, cruzando essas evidências com **focos de calor de satélite e dados meteorológicos**. A cooperativa recebe informações organizadas para revisar ocorrências e coordenar encaminhamentos.
-
-> **Estado do projeto:** MVP em desenvolvimento. O backend oficial e o serviço de dados ambientais estão descritos nos READMEs técnicos anteriores. A Fase 4 adiciona interface HTML/CSS/JavaScript servida por Nginx; um worker persistente continua proposto. **A Fase 2 implementa visão simulada/Gemini selecionável e resultado estruturado validado. O padrão continua simulado. Uma chamada Gemini real com imagem sintética funcionou; a qualidade visual continua sem avaliação. A Fase 3 adiciona snapshot ambiental por incidente e cruzamento espacial/temporal determinístico, com revisão humana.** O índice de risco também não é calculado. O histórico contém um cliente Expo de referência para possível integração mobile.
-
-> **Auditoria da Fase 0 — 07/11/2026:** Código inspecionado em `1825555f9a714ffab131a3e7796f4223bb753944`. A suíte local retornou **11 aprovados, 13 ignorados e 1 aviso**. Os dois comandos Compose foram tentados, mas Docker não está disponível; os cenários PostgreSQL/PostGIS continuam sem execução nesta auditoria. **Fase 0 bloqueada até a validação integral do ambiente e do banco.** Veja [auditoria e evidências](docs/AUDITORIA.md) e [decisões](docs/DECISOES.md). Nenhum código de aplicação foi alterado.
-
-> **Atualização de CI — 07/11/2026:** [Suíte completa com PostGIS aprovada](https://github.com/armandor123/terra-firma/actions/runs/42428442702): **24 testes aprovados, nenhum ignorado**, com um aviso de depreciação do TestClient. Mudanças publicadas em `chore/fase-1`; inicialização do ambiente de desenvolvimento ainda não verificada. Naquela revisão a IA era simulada. A Fase 2 adiciona visão Gemini selecionável; a Fase 3 acrescenta posteriormente snapshot ambiental e cruzamento determinístico.
-
-> **Fase 2:** `VisionProvider`, adaptadores simulated/Gemini e saída validada por sinal estão implementados no envio. [CI aprovou os 65 testes](https://github.com/armandor123/terra-firma/actions/runs/42429976440). O padrão continua simulado. Chamada Gemini real validada com imagem sintética; qualidade em fotos reais não avaliada e nenhuma acurácia alegada.
-
-## Sumário
-
-- [Visão geral](#visão-geral)
-- [Escopo e estado das funcionalidades](#escopo-e-estado-das-funcionalidades)
-- [Arquitetura e tecnologias](#arquitetura-e-tecnologias)
-- [Estrutura do repositório](#estrutura-do-repositório)
-- [Instalação e execução](#instalação-e-execução)
-- [Configuração](#configuração)
-- [Autenticação e permissões](#autenticação-e-permissões)
-- [Referência das APIs](#referência-das-apis)
-- [Fotos, localização e reenvios](#fotos-localização-e-reenvios)
-- [Dados ambientais](#dados-ambientais)
-- [Inteligência artificial](#inteligência-artificial)
-- [Cruzamento de evidências](#cruzamento-de-evidências)
-- [Persistência e operação](#persistência-e-operação)
-- [Integração da interface](#integração-da-interface)
-- [Testes e validação](#testes-e-validação)
-- [Identidade visual e créditos](#identidade-visual-e-créditos)
-- [Evolução do projeto](#evolução-do-projeto)
-- [Contribuição, licença e referências](#contribuição-licença-e-referências)
-
-## Visão geral
-
-### Objetivo e problema
-
-O objetivo principal é apoiar a proteção da vegetação e das comunidades rurais diante de queimadas e incêndios. Pequenos produtores nem sempre conseguem interpretar os dados ambientais disponíveis, e relatos dispersos dificultam o acompanhamento e a priorização pela cooperativa.
-
-O Terra-Firma propõe reunir a foto do local, a localização autorizada, os indícios observados pela IA e o contexto ambiental em uma mesma ocorrência. A identificação de mata seca é uma capacidade visual pretendida: uma fotografia pode sugerir vegetação ressecada, mas não mede, sozinha, a umidade do material nem comprova o risco de incêndio.
-
-### Núcleo da solução: imagem, IA e satélites
-
-| Evidência | Papel na proposta |
-|---|---|
-| Foto do produtor | Mostrar as condições locais e possíveis sinais de fogo, fumaça, vegetação seca ou queimada |
-| IA de imagem, com adaptador Gemini selecionável | Apontar indícios visuais e limitações da imagem para apoiar a triagem |
-| Localização e horário do relato | Permitir comparação espacial e temporal com observações ambientais |
-| NASA FIRMS | Consultar focos de calor próximos e seus horários de observação |
-| Open-Meteo | Acrescentar temperatura, umidade, vento e precipitação ao contexto |
-| Revisão da cooperativa | Avaliar as evidências reunidas, registrar a decisão e preparar encaminhamentos |
-
-A Fase 3 verifica focos próximos dentro de raio/janela temporal retroativa configuráveis e preserva o clima como contexto complementar. A foto pode mostrar algo que o satélite não registrou; a ausência de foco próximo não deve invalidar o relato. Snapshots e regras determinísticas estão implementados; uma consulta real FIRMS/Open-Meteo retornou dados válidos em um ponto de demonstração; qualidade da associação em campo não avaliada.
-
-### Público e jornada proposta
-
-| Perfil | Jornada prevista |
-|---|---|
-| Produtor rural | Entrar com usuário e senha, fotografar o local, informar localização autorizada e acompanhar suas ocorrências |
-| Representante da cooperativa | Cadastrar produtores e propriedades, revisar fotos e análises, consultar contexto ambiental e preparar comunicações |
-
-1. O produtor envia uma foto e, quando autorizado, sua localização.
-2. O backend valida o acesso, registra a ocorrência e guarda a imagem em armazenamento privado.
-3. O backend chama de forma síncrona o provedor de visão selecionado para a foto limpa; o padrão é simulado. Gemini exige credencial no servidor e modelo compatível.
-4. O processador cruza os indícios com focos de calor próximos e informações meteorológicas, preservando origem e horário dos dados.
-5. A cooperativa realiza a revisão humana e registra o encaminhamento da ocorrência.
-
-O passo 3 tem implementação configurável, testada com HTTP controlado; uma chamada real com imagem sintética já passou, mas a validação com fotos reais continua pendente. O passo 4 está implementado para novos incidentes com coordenadas: o contexto é consultado, preservado e cruzado antes de persistir. Sem localização ou fontes utilizáveis, a evidência permanece indisponível. A plataforma apoia decisões e não substitui serviços de emergência ou alertas oficiais. O MVP não envia comunicações automaticamente às autoridades.
-
-O combate ao desmatamento é a finalidade do projeto. O escopo atual não inclui detecção geral de corte de árvores, medição de desmatamento ou cálculo de hectares queimados por fotografia.
+O padrão é **ambiente demo + visão simulada**. A interface mostra **DADOS SIMULADOS** sempre que qualquer entrada tem `simulated=true`. Falha em live continua indisponibilidade; não vira simulação nem “sem risco”. Nenhuma métrica de acurácia foi medida.
 
 ## Escopo e estado das funcionalidades
 
-Os estados abaixo foram conferidos contra o código na Fase 0. Os 13 cenários dependentes de PostgreSQL foram posteriormente executados com sucesso no CI; veja Testes e validação. Isso não comprova prontidão para produção. A apresentação descreve a proposta de produto e não comprova, por si só, implementação.
+“Implementado” significa coberto pelos testes indicados, não aprovação para produção. Comportamento de provedores é testado com HTTP controlado, salvo verificação externa explicitamente identificada. Execuções reais em [VALIDACAO.md](docs/VALIDACAO.md) e [AUDITORIA.md](docs/AUDITORIA.md).
 
-| Funcionalidade | Estado atual |
-|---|---|
-| Login por nome de usuário e senha | Implementado; hash Argon2 e troca de senha inicial |
-| Perfis e isolamento entre cooperativas | Implementados no backend |
-| Sessão mobile | Access token de 15 minutos e refresh com rotação, até 30 dias por sessão |
-| Produtores e propriedades | Criação e listagem; edição/exclusão pendentes |
-| Proximidade geográfica | PostGIS; propriedades representadas por pontos |
-| Fotos de ocorrências | Upload multipart, validação, remoção de EXIF e armazenamento privado |
-| Reenvio sem duplicação | UUID por produtor, transação e bloqueio de requisições concorrentes |
-| Histórico e revisão | Consulta paginada e histórico de alterações de status |
-| Relatórios | Resumo acumulado; filtros por período e exportações pendentes |
-| Meteorologia e satélite | Conectores Open-Meteo e NASA FIRMS; modo demo explícito |
-| IA de imagens | VisionProvider com implementações simulated/Gemini; chamada real sintética validada; avaliação em fotos reais pendente |
-| Fogo, fumaça, mata seca e vegetação queimada | Saída estruturada por sinal implementada; qualidade não medida em fotos reais |
-| Cruzamento de evidências | Implementado: snapshot por incidente, filtro espacial/temporal e clima; não confirma incêndio nem calcula risco |
-| Interface web HTML/CSS/JavaScript | Implementada e testada no navegador/CI; veja docs/INTERFACE.md |
-| Índice de risco de incêndio | Não implementado; retorna valor nulo |
-| SOS e comunicação externa | Contato e minuta; sem despacho ou envio automático |
-| Aplicativo React Native/Expo | Cliente de referência; sem telas, APK ou IPA |
-| Fila offline, push e polígonos | Não implementados |
-| INPE e MapBiomas | Fontes previstas no PRD; sem conectores implementados |
+| Funcionalidade | Estado e limites | Evidência de teste |
+|---|---|---|
+| Login e troca obrigatória de senha | Implementado; Argon2, acesso opaco/refresh rotativo e revogação | `backend/tests/test_backend.py`, `web/tests/test_browser.py` |
+| Perfis/isolamento por cooperativa | Implementado; produtor vê seus incidentes, cooperativa vê seus membros | `backend/tests/test_backend.py` |
+| Produtores/propriedades | Criação/listagem implementadas; edição/exclusão ausentes | `backend/tests/test_backend.py`, `web/tests/test_browser.py` |
+| Proximidade espacial | Implementada em PostGIS com pontos/distância; sem polígonos | `backend/tests/test_backend.py` |
+| Fotos/localização | JPEG/PNG validado, EXIF removido, foto privada; localização opcional/autorizada, não verificada | `backend/tests/test_local.py`, `backend/tests/test_backend.py`, `web/tests/test_browser.py` |
+| Idempotência | Implementada por UUID/agricultor e lock; navegador preserva bytes/metadata em memória para repetir | `backend/tests/test_backend.py`, `web/tests/test_browser.py` |
+| Adaptadores de visão/sinais estruturados | Implementados simulated/Gemini, quatro sinais, seis classes, limitações e versões; qualidade visual não avaliada | `backend/tests/test_vision.py`, `backend/tests/test_backend.py` |
+| Conectores ambientais | Open-Meteo/FIRMS implementados, origem/horários/status/avisos/simulação, falha parcial e demo explícito | `dados-api/tests/test_data.py`, `tests/test_integration.py` |
+| Evidências por incidente | Snapshot persistido, filtro espacial/temporal, distância/horário/confiança de focos e clima implementados; sem confirmação de fogo | `backend/tests/test_evidence.py`, `backend/tests/test_backend.py` |
+| Revisão humana | Transições, notas obrigatórias e trilha implementadas; escalonamento interno | `backend/tests/test_backend.py`, `web/tests/test_browser.py` |
+| Interface web estática | Login, foto/GPS, paginação de dez itens, foto autenticada, IA/contexto/revisão e layout móvel implementados | `web/tests/test_browser.py`, `web/tests/client.test.js` |
+| Limites compartilhados | Implementados no PostgreSQL; contenção de ataque público/IP cabe ao operador | `backend/tests/test_limits.py` |
+| Fotos órfãs | Limpeza manual com dry-run/apply, carência e lock implementada; sem retenção/agendamento automático | `backend/tests/test_cleanup.py` |
+| Identidades distintas no banco | Aplicação DML e migrador privilegiado implementados no Compose | `backend/tests/test_provision.py`, inicialização da stack do navegador |
+| Resumo/minuta/SOS | Resumo acumulado/contato/minuta implementados; sem envio ou acionamento externo | `backend/tests/test_backend.py`, `backend/tests/test_local.py` |
+| Privacidade/LGPD | Checklist e aviso provisório; política, avaliação legal e atendimento completo a direitos pendentes | [Checklist](docs/PRIVACIDADE-LGPD.md) |
+| Índice de risco, worker persistente, offline, push, polígonos, INPE/MapBiomas | Não implementados; risco nulo/não validado | Escopo no [relatório de auditoria](docs/AUDITORIA.md) |
+| React Native/Expo | Somente integração de referência; sem aplicativo/build completo | `backend/examples/expo-client.ts` |
 
-## Arquitetura e tecnologias
+## Instalação e inicialização
 
-A apresentação define a arquitetura pretendida com **interface web HTML/CSS/JavaScript**, backend **Python/FastAPI**, **PostgreSQL/PostGIS**, API de dados e **worker Python com Google Gemini**. Os READMEs anteriores documentam o backend e o serviço de dados, além de um cliente React Native/Expo de referência. A interface web passa a ser a referência de produto desta documentação; o cliente Expo permanece como material para possível evolução mobile.
+Requisitos: Git, Docker com Compose v2, Python 3 e rede para baixar imagens/dependências. O teste automatizado de navegador exige Linux/Docker. Na branch de desenvolvimento publicada (ainda sem merge em main):
 
-```mermaid
-flowchart TD
-    M["Interface web Nginx"] --> B["Backend oficial — FastAPI :8000"]
-    B --> P["PostgreSQL / PostGIS"]
-    B --> F["Volume privado de fotos"]
-    B --> D["Serviço de dados — FastAPI :8001"]
-    B -.-> V["API Gemini (opcional)"]
-    D --> W["Open-Meteo"]
-    D --> N["NASA FIRMS"]
-```
-
-| Componente | Tecnologia e responsabilidade |
-|---|---|
-| `backend/` | Python 3.12, FastAPI, Pydantic, psycopg 3, pwdlib/Argon2 e Pillow; usuários, sessões, propriedades, fotos, revisão e relatórios |
-| `dados-api/` | Python 3.12, FastAPI e HTTPX; consultas externas, normalização, falhas parciais e cache |
-| Banco | PostgreSQL 16 e PostGIS 3.7, conforme a imagem do Compose |
-| Arquivos | Volume privado; o banco armazena somente a referência da fotografia |
-| Interface web | HTML/CSS/JS nativos, Nginx para arquivos e proxy; computador/celular |
-| Processamento de imagem/contexto | Visão síncrona e snapshot/cruzamento por incidente; worker persistente pendente |
-| Referência mobile | React Native, Expo e TypeScript; cliente de integração anterior, sem aplicativo completo |
-| Execução e testes | Docker Compose e pytest |
-
-O diagrama acima resume os serviços documentados e o acesso previsto pela interface. Na arquitetura de evolução, o worker acessará as fotos privadas, consultará o Gemini e a API de dados e persistirá os resultados para revisão humana. Fila persistente e worker continuam propostos. A Fase 2 implementa Gemini diretamente no backend; chamada API real com imagem sintética validada. Veja [evidência](docs/vision-live-check.json).
-
-A interface acessa o backend. O backend autoriza o acesso à propriedade e consulta o serviço de dados usando uma chave interna. As credenciais dos serviços não devem ser distribuídas no aplicativo.
-
-## Estrutura do repositório
-
-| Caminho | Conteúdo |
-|---|---|
-| `compose.yaml` / `.env.example` | Ambiente de desenvolvimento e modelo de configuração |
-| `compose.test.yaml` / `Dockerfile.tests` | Ambiente isolado de testes |
-| `backend/backend/main.py` | Aplicação e rotas do backend |
-| `backend/backend/schemas.py` | Validação das entradas |
-| `backend/backend/vision.py`, `vision_models.py` | Interface, provedores de visão e saída validada |
-| `backend/vision-result.schema.json` | JSON schema do novo resultado visual |
-| `backend/backend/evidence.py`, `backend/backend/migrations/002_incident_evidence.sql` | Validação de contexto, cruzamento e persistência de snapshot |
-| `backend/backend/db.py`, `storage.py` | Conexão ao banco e armazenamento privado |
-| `backend/backend/migrate.py`, `migrations/` | Migrador e SQL versionado |
-| `backend/backend/bootstrap.py` | Criação do primeiro representante da cooperativa |
-| `backend/openapi.json` | Contrato backend 2.1.0, detalhe de incidente tipado |
-| `backend/incident-metadata.schema.json` | Schema do JSON de metadata do upload |
-| `backend/examples/expo-client.ts` | Cliente de integração de referência |
-| `dados-api/dados/` | Aplicação, modelos e provedores ambientais |
-| `dados-api/openapi.json`, `example-context.json` | Contrato 1.0.0 e exemplo do modo demo |
-| `backend/tests/`, `dados-api/tests/`, `tests/` | Testes locais e de integração |
-| `docs/` | Contratos detalhados, integração mobile, demonstração, validação e evolução |
-
-O kit `identidade-visual/` foi fornecido separadamente. Os caminhos desse kit só estarão disponíveis no GitHub depois de sua inclusão no repositório.
-
-## Instalação e execução
-
-### Requisitos
-
-- Git e Docker com Docker Compose v2 para o fluxo recomendado.
-- Acesso à internet para baixar imagens/dependências; o modo demo ambiental não consulta clima/satélite; visão é configurada separadamente.
-- Python 3.12 para execução direta; o comando de geração de segredos abaixo requer Python local.
-- Para modo live, conectividade com os provedores e uma chave NASA FIRMS para os focos de calor.
-
-### Iniciar com Docker Compose
-
-```bash
-git clone https://github.com/armandor123/terra-firma.git
+```sh
+git clone --branch feat/fase-5-operacao https://github.com/armandor123/terra-firma.git
 cd terra-firma
-python scripts/configure.py
-```
-
-O configurador cria `.env` privado, sem imprimir segredos e sem sobrescrever instalação existente. Mantenha demo/simulated na primeira execução.
-
-```bash
+python3 scripts/configure.py
 docker compose up --build -d
-docker compose logs migrate
 docker compose exec backend python -m backend.bootstrap \
   --username coop.admin --name "Representante" --cooperative "Cooperativa Demo"
 ```
 
-O bootstrap solicita uma senha; não existe conta padrão. A migração precisa terminar com sucesso para o backend iniciar. Faça login em `/docs`, troque a senha inicial em `/v1/auth/password` e entre novamente: a troca revoga todas as sessões.
+O configurador cria `.env` privado sem imprimir segredos ou sobrescrever arquivo existente. Bootstrap solicita senha de 12–128 caracteres; não há conta padrão. Migrações/provisionamento precisam terminar antes do backend. Abra **http://127.0.0.1:8080**, entre, troque a senha inicial e entre novamente. Cadastre produtor/propriedade na tela da cooperativa; use a conta do produtor para enviar foto e a da cooperativa para revisar. [Roteiro completo](docs/INTERFACE.md).
 
-Abra **http://127.0.0.1:8080**, entre com a conta bootstrap, troque a senha e entre novamente. A cooperativa pode cadastrar produtor e propriedade na tela. Veja [roteiro e limites](docs/INTERFACE.md).
-
-| Serviço | Endereço local |
+| Serviço | Endereço local padrão |
 |---|---|
-| Swagger do backend | http://127.0.0.1:8000/docs |
-| Saúde do backend e PostGIS | http://127.0.0.1:8000/health |
-| Swagger do serviço de dados | http://127.0.0.1:8001/docs |
-| Saúde do serviço de dados | http://127.0.0.1:8001/health |
+| Interface e proxy da API na mesma origem | http://127.0.0.1:8080 |
+| Swagger / health do backend | http://127.0.0.1:8000/docs / http://127.0.0.1:8000/health |
+| Swagger / health de dados | http://127.0.0.1:8001/docs / http://127.0.0.1:8001/health |
 
-Para acompanhar e encerrar o ambiente:
-
-```bash
-docker compose ps
-docker compose logs backend dados
-docker compose down
-```
-
-Os volumes preservam banco e fotografias. **`docker compose down -v` remove os volumes e seus dados.**
-
-### Executar sem Docker
-
-Crie previamente um banco PostgreSQL com PostGIS disponível. No diretório `dados-api/`, crie um ambiente virtual, instale `requirements.txt`, configure `DATA_API_KEY`, `DATA_MODE` e, se necessário, `FIRMS_MAP_KEY`. Inicie:
-
-```bash
-python -m uvicorn dados.main:create_app --factory --host 127.0.0.1 --port 8001
-```
-
-Em outro terminal, dentro de `backend/`, prepare outro ambiente virtual e instale seu `requirements.txt`. Configure `DATABASE_URL`, `PHOTO_DIR`, `DATA_API_URL` e a mesma `DATA_API_KEY`. Execute:
-
-```bash
-python -m backend.migrate
-python -m backend.bootstrap --username coop.admin --name "Representante" --cooperative "Cooperativa Demo"
-python -m uvicorn backend.main:create_app --factory --host 127.0.0.1 --port 8000
-```
-
-O Python não carrega `.env` automaticamente; exporte as variáveis no terminal. O usuário do migrador precisa poder criar a extensão PostGIS, ou ela deve estar instalada previamente. Consulte [backend/README.md](backend/README.md) e [dados-api/README.md](dados-api/README.md) para os comandos completos de ambiente virtual e exemplos PowerShell.
+`docker compose down` para serviços e preserva volumes. **Acrescentar `--volumes` apaga banco e fotos.** Instalações existentes precisam preservar credenciais/volumes do migrador e acrescentar credenciais distintas da aplicação; [OPERACAO.md](docs/OPERACAO.md) explica atualização e execução Python direta. PostGIS é obrigatório; não há fallback SQLite.
 
 ## Configuração
 
-| Variável | Uso | Padrão / regra |
-|---|---|---|
-| `POSTGRES_USER` | Usuário do banco no Compose | `terra_firma` |
-| `POSTGRES_DB` | Nome do banco no Compose | `terra_firma` |
-| `POSTGRES_PASSWORD` | Senha do banco | Obrigatória; manter privada |
-| `DATA_API_KEY` | Autenticação entre backend e dados | Obrigatória; mínimo de 24 caracteres no serviço de dados |
-| `DATA_MODE` | `demo` ou `live` | Compose: `demo`; código sem variável: `live` |
-| `FIRMS_MAP_KEY` | Chave da NASA FIRMS | Necessária para focos reais; diferente da chave interna |
-| `BACKEND_BIND` | Interface do host exposta pelo Compose | `127.0.0.1` |
-| `DATABASE_URL` | Conexão do backend/migrador | Montada pelo Compose; obrigatória na execução direta |
-| `DATA_API_URL` | URL interna do serviço de dados | Compose: `http://dados:8001`; execução direta: `http://127.0.0.1:8001` |
-| `PHOTO_DIR` | Diretório privado de imagens | Compose: `/app/data/photos`; execução direta: `./data/photos` |
-| `TEST_DATABASE_URL` | Banco exclusivo para testes | Configurado no Compose de testes |
-| `VISION_MODE` | Provedor de imagem, independente de DATA_MODE | `simulated` (padrão) ou `gemini` |
-| `GEMINI_API_KEY` | Credencial de visão, somente no backend | Obrigatória no modo gemini |
-| `GEMINI_MODEL` | ID de modelo com visão e JSON estruturado | Obrigatório no modo gemini; sem padrão presumido |
-| `EVIDENCE_RADIUS_KM` | Raio em torno da coordenada do incidente | 10 km; permitido 1–50 |
-| `EVIDENCE_WINDOW_HOURS` | Janela retroativa inclusiva desde o recebimento | 24 h; permitido 1–96 |
+Segredos ficam no servidor, nunca em `web/public` ou variáveis públicas do cliente. Compose lê `.env`; Python direto não.
 
-Não envie `.env`, tokens, chaves, bancos ou fotos privadas ao GitHub. Em uma instalação existente, preserve nomes reais do banco/usuário e o projeto Compose: mudar essas variáveis não renomeia um banco já inicializado.
-
-## Autenticação e permissões
-
-- Os papéis técnicos são `farmer` e `cooperative`; o servidor define o papel após verificar as credenciais.
-- O login utiliza username e senha; CPF não é coletado para autenticação.
-- Senhas são armazenadas com hash Argon2. Tokens são opacos e aleatórios; o banco mantém seus hashes, não tokens em texto puro.
-- Access token: 900 segundos. Refresh: prazo absoluto de até 30 dias desde o login, sem extensão indefinida.
-- A renovação troca ambos os tokens e invalida os anteriores. Reutilizar refresh antigo revoga a sessão correspondente.
-- Faça uma única renovação por vez. Se a resposta de renovação se perder, pode ser necessário novo login.
-- A troca de senha revoga todas as sessões. Logout remoto requer access token válido; apagar tokens offline não garante revogação no servidor.
-
-Exemplo de login, com credenciais escolhidas pelo operador:
-
-```bash
-curl -X POST http://127.0.0.1:8000/v1/auth/login \
-  -H 'Content-Type: application/json' \
-  -d '{"username":"coop.admin","password":"SUBSTITUA_PELA_SUA_SENHA"}'
-```
-
-A resposta contém `access_token`, `refresh_token`, `token_type`, prazos, `role` e `must_change_password`. Nas rotas protegidas, envie `Authorization: Bearer <access_token>`. A nova senha deve ter 12–128 caracteres e ser diferente da anterior.
-
-## Referência das APIs
-
-### Backend — porta 8000
-
-| Método | Rota | Acesso / finalidade |
-|---|---|---|
-| GET | `/health` | Público; verifica banco/PostGIS |
-| POST | `/v1/auth/login` | Público; credenciais |
-| POST | `/v1/auth/refresh` | Refresh válido; JSON com `refresh_token` |
-| GET | `/v1/me` | Autenticado; dados do usuário |
-| POST | `/v1/auth/password` | Autenticado; `old_password` e `new_password` |
-| POST | `/v1/auth/logout` | Autenticado; revoga sessão |
-| POST / GET | `/v1/farmers` | Cooperativa; cadastrar/listar produtores |
-| POST | `/v1/properties` | Cooperativa; cadastrar propriedade |
-| GET | `/v1/properties` | Propriedades autorizadas |
-| GET | `/v1/properties/nearby` | Cooperativa; proximidade em metros |
-| GET | `/v1/properties/{id}/environment` | Acesso à propriedade; contexto ambiental |
-| POST | `/v1/incidents` | Produtor; foto e metadata multipart |
-| GET | `/v1/incidents` | Ocorrências autorizadas; `limit` 1–200, padrão 50; `offset` ≥ 0 |
-| GET | `/v1/incidents/{id}` | Acesso à ocorrência; detalhes e revisões |
-| GET | `/v1/incidents/{id}/photo` | Acesso à ocorrência; imagem privada |
-| PATCH | `/v1/incidents/{id}/review` | Cooperativa responsável; revisão |
-| GET | `/v1/incidents/{id}/notification-draft` | Cooperativa responsável; minuta não enviada |
-| GET | `/v1/reports/summary` | Cooperativa; resumo acumulado |
-| GET | `/v1/sos` | Público; contato, sem acionamento automático |
-
-Após a criação inicial, a maioria das rotas exige troca da senha temporária. O cadastro de produtor recebe `name` (2–120 caracteres) e `username` (3–80, letras ASCII, números, ponto, hífen ou sublinhado; diferencia maiúsculas/minúsculas). A cooperativa é determinada no servidor; a resposta inclui senha temporária.
-
-Cadastro de propriedade:
-
-```json
-{
-  "farmer_id": "ID_DO_PRODUTOR",
-  "name": "Sítio Esperança",
-  "municipality": "Campinas",
-  "state": "SP",
-  "latitude": -22.9,
-  "longitude": -47.06,
-  "area_ha": 12.5
-}
-```
-
-Município, UF brasileira válida, produtor e coordenadas são obrigatórios. Nome e área são opcionais; área não negativa. A busca próxima recebe `latitude`, `longitude` e `radius_m` (1–50.000), devolvendo até 200 propriedades da própria cooperativa ordenadas por distância.
-
-### Revisão de ocorrências
-
-```mermaid
-stateDiagram-v2
-    [*] --> submitted
-    submitted --> under_review
-    under_review --> verified
-    under_review --> rejected
-    verified --> escalated
-    rejected --> [*]
-    escalated --> [*]
-```
-
-Envie `{"status":"under_review","notes":"Registro recebido para avaliação humana."}` na revisão. As notas devem ter 5–2.000 caracteres. `verified` significa avaliação humana interna; `escalated` é um status interno, sem envio automático a autoridades. Estados finais não permitem nova transição.
-
-### Erros principais
-
-| HTTP | Significado |
+| Variável | Padrão / regra |
 |---|---|
-| 401 | Credencial, chave ou token inválido/expirado; refresh reutilizado |
-| 403 | Perfil insuficiente ou troca inicial de senha pendente |
-| 404 | Recurso inexistente ou não autorizado |
-| 409 | Username duplicado, transição inválida ou UUID reaproveitado com conteúdo diferente |
-| 413 | Corpo da requisição acima de 4.100.000 bytes |
-| 422 | Entrada, metadata ou imagem inválida |
-| 429 | Limite de tentativas de login |
-| 503 | Serviço de dados ou arquivo de foto indisponível |
+| `POSTGRES_USER`, `POSTGRES_DB`, `POSTGRES_PASSWORD` | Migrador/dono do banco; nome padrão `terra_firma`, senha privada gerada |
+| `POSTGRES_APP_USER`, `POSTGRES_APP_PASSWORD` | Identidade DML da aplicação; padrão `terra_firma_app`, senha privada distinta gerada |
+| `DATA_API_KEY` | Chave interna backend/dados gerada; mínimo 24 caracteres |
+| `DATA_MODE`, `FIRMS_MAP_KEY` | Compose `demo`; `live` exige chave NASA para focos (clima pode funcionar separadamente) |
+| `VISION_MODE`, `GEMINI_API_KEY`, `GEMINI_MODEL` | `simulated`; `gemini` exige chave privada e modelo explícito compatível |
+| `EVIDENCE_RADIUS_KM`, `EVIDENCE_WINDOW_HOURS` | 10 km (1–50), janela retroativa de 24 h (1–96); heurísticas contextuais não calibradas |
+| `WEB_BIND`, `WEB_PORT` | `127.0.0.1`, `8080` |
+| `BACKEND_BIND`, `BACKEND_PORT`, `DATA_PORT` | `127.0.0.1`, `8000`, `8001`; bind host de dados permanece loopback |
+| `DATABASE_URL`, `PHOTO_DIR`, `DATA_API_URL` | Runtime do backend; Compose fornece URL DML, `/app/data/photos`, `http://dados:8001` |
+| `APP_DATABASE_USER`, `APP_DATABASE_PASSWORD` | Entradas do provisionamento somente no migrador, vindas das variáveis de identidade DML no Compose |
+| `TEST_DATABASE_URL` | Banco exclusivo de testes; nunca usar produção |
 
-## Fotos, localização e reenvios
+Para entradas reais, configure privadamente `DATA_MODE=live`, `VISION_MODE=gemini` e os três ajustes de provedor e recrie backend/dados. Não publique URLs com chaves. `gemini-3.8-flash` funcionou em uma verificação autorizada com imagem sintética; isso não garante disponibilidade na conta nem qualidade de detecção. [Visão](docs/VISAO.md), [cruzamento](docs/CRUZAMENTO.md), [justificativas dos padrões](docs/DECISOES.md).
 
-`POST /v1/incidents` recebe **multipart/form-data**, com `metadata` como texto JSON (até 10.000 caracteres) e `photo` como arquivo JPEG/PNG (até 3.000.000 bytes e 12.000.000 pixels).
+## Comportamento e limites
 
-```json
-{
-  "client_request_id": "86a0de74-5b4b-4263-98a1-b1b77d415d16",
-  "property_id": "ID_DA_PROPRIEDADE",
-  "description": "Fumaça observada ao longe",
-  "latitude": -22.9,
-  "longitude": -47.06,
-  "location_source": "gps",
-  "location_authorized": true
-}
+Envio multipart de `metadata` JSON e `photo` JPEG/PNG (3.000.000 bytes, 12 MP; corpo total 4.100.000 bytes). UUID, metadata e bytes originais precisam permanecer iguais nos reenvios; reutilização conflitante retorna 409. A foto é reencodificada sem EXIF. Localização é opcional e nunca substituída pelo ponto da propriedade; a referência temporal é o recebimento no servidor, não captura verificada.
+
+Gemini devolve fogo/fumaça/vegetação seca/queimada com presença, confiança declarada e justificativa curta; limitações; classificação; versões de modelo/prompt. Inconclusivo é válido. Confiança declarada não é acurácia medida. Registros antigos continuam legíveis. Novos relatos persistem snapshot/evidência uma vez; reenvio, GET e revisão não consultam novamente. Sem localização ou fonte indisponível/stale, `unavailable` preserva evidências parciais. Focos vazios significam `no_nearby_hotspot`, não ausência de fogo. `consistent` significa apenas contexto compatível. Caixas FIRMS cruzando antimeridiano continuam indisponíveis; as regras de distância tratam ±180°.
+
+Nginx serve arquivos e proxy `/v1/` na mesma origem, com CSP/no-store/nosniff; sem CORS aberto. Tokens somente em memória no navegador. Refresh coordenado; sair limpa memória/foto blob. Sem fila offline, conversão HEIC ou rascunho durável. GPS exige permissão e localhost/HTTPS. Backend exige autorização para dados/fotos. [Interface](docs/INTERFACE.md).
+
+Janelas fixas de 60 s compartilhadas no PostgreSQL: cinco tentativas de login por username (sucesso limpa), 120 requisições autenticadas/usuário, 20 novos uploads/agricultor, 30 refreshes identificados/usuário. Réplicas precisam do mesmo banco/schema. Rotas públicas, tokens inválidos e muitos usernames distintos exigem proteção de gateway/IP; cache de dados é por processo. 429 traz `Retry-After: 60` conservador. Não é proteção DDoS.
+
+Limpeza manual de órfãs (primeiro inspecione):
+
+```sh
+docker compose exec backend python -m backend.cleanup_photos
+docker compose exec backend python -m backend.cleanup_photos --apply
 ```
 
-Descrição opcional: até 2.000 caracteres. Latitude e longitude devem vir juntas. Use `gps` ou `manual` com autorização; sem localização, omita as coordenadas e use `location_source=unavailable` e `location_authorized=false`. A ausência de localização não impede o relato. O backend não comprova a posição: retorna `location_verified=false`.
+Carência padrão 24 h; só fotos por hash sem referência/temporários abandonados são elegíveis. Fotos referenciadas/novas, arquivos estranhos e symlinks são preservados. Upload e limpeza coordenam locks PostgreSQL; réplicas também precisam compartilhar armazenamento privado. Não há exclusão agendada nem política de retenção de incidentes implementada. [Operação](docs/OPERACAO.md), [privacidade](docs/PRIVACIDADE-LGPD.md).
 
-Exemplo, após salvar o JSON em um arquivo local `metadata.json`:
+Compose de desenvolvimento não significa aprovação para produção. HTTPS, contenção no gateway, monitoramento, backup/restauração conjunta de banco/fotos, retenção, responsável/aviso/canal e atendimento a titulares exigem configuração/decisão do operador. Qualidade da IA/associação em campo não foi avaliada.
 
-```bash
-curl -X POST http://127.0.0.1:8000/v1/incidents \
-  -H "Authorization: Bearer $ACCESS_TOKEN" \
-  --form-string "metadata=$(cat metadata.json)" \
-  -F 'photo=@foto.jpg;type=image/jpeg'
-```
+## Testes e validação real
 
-Use um token de produtor e sua propriedade. O UUID acima é ilustrativo: gere um novo por relato e preserve-o em todos os reenvios desse relato. O servidor verifica o formato real, reencodifica a foto em JPEG e remove EXIF. `photo_base64` não é aceito no contrato 2.0.
-
-A criação retorna HTTP 201 com `{"id":"...","replayed":false}`. Reenvio idêntico retorna o mesmo ID e `replayed=true`. Mesmo UUID com metadata ou bytes diferentes retorna 409. Preserve UUID, metadata e arquivo; não recomprima a imagem a cada tentativa. A chave é isolada por produtor.
-
-## Dados ambientais
-
-### Modos de operação
-
-| Modo | Comportamento |
-|---|---|
-| `demo` | Valores ambientais fictícios de 01/01/2026; não seleciona nem desativa a visão |
-| `live` | Consulta Open-Meteo e NASA FIRMS; falhas ficam explícitas, sem substituir silenciosamente por simulação |
-
-Para ativar live, configure `DATA_MODE=live`, forneça `FIRMS_MAP_KEY` quando disponível e recrie o serviço com `docker compose up -d dados`. Sem chave NASA, a meteorologia pode funcionar enquanto os focos ficam indisponíveis. DATA_MODE não seleciona a visão. Gemini pode ser ativado separadamente por VISION_MODE; não há índice de risco calculado.
-
-### Serviço de dados — porta 8001
-
-| Método | Rota | Resultado |
-|---|---|---|
-| GET | `/health` | Modo e versão; público |
-| POST | `/v1/context` | Meteorologia, focos e estado do risco |
-| POST | `/v1/weather` | Envelope meteorológico |
-| POST | `/v1/hotspots` | Envelope de focos |
-
-As rotas POST exigem `X-API-Key`. Entrada comum:
-
-```json
-{"latitude":-22.9,"longitude":-47.06,"radius_km":10,"days":1}
-```
-
-Coordenadas WGS84 em graus decimais; latitude entre −90 e 90, longitude entre −180 e 180. Raio padrão 10 km, intervalo 1–50; janela padrão 1 dia, intervalo 1–5. Campos desconhecidos e números não finitos são rejeitados.
-
-Cada fonte informa `schema_version`, `source`, `simulated`, `status`, `observed_at`, `fetched_at`, `data` e `warnings`. Os status são `ok`, `stale` e `unavailable`. Exiba origem, referência temporal, avisos e indicação de simulação junto dos dados.
-
-- Open-Meteo: temperatura °C, umidade %, vento km/h/direção em graus e precipitação mm. São dados de modelo meteorológico; não representam uma estação instalada na propriedade. Referência meteorológica com mais de três horas é marcada como `stale`.
-- NASA FIRMS: sensor `VIIRS_SNPP_NRT`, horário UTC de aquisição, confiança `low`/`nominal`/`high`, distância em km e potência radiativa `frp_mw`. FRP não é área em hectares; confiança não é uma porcentagem de acerto do aplicativo.
-- Focos passam por deduplicação e filtragem por distância ao ponto consultado; não há interseção com polígonos. Consultas que cruzam o antimeridiano ficam indisponíveis nesta versão.
-- Lista vazia `[]` difere de `null` indisponível. Falhas parciais podem retornar HTTP 200 com envelope `unavailable`; nunca transforme isso em zero focos ou risco baixo.
-- O cache é em memória, por processo: até 256 consultas por cinco minutos, somente quando ambas as fontes estão `ok`. `fetched_at` conserva o horário original ao ler cache.
-- `risk.level=null`, `risk.method=null` e `risk.validated=false` até definição e validação de um método.
-
-Consulte os termos, cotas e atribuições dos provedores antes de publicar o serviço. Não registre URLs completas NASA em logs: elas podem conter a chave.
-
-## Inteligência artificial
-
-### Implementação da Fase 2 e limites da validação
-
-`VisionProvider` define `analyze(image: bytes) -> VisionResult`. `SimulatedProvider` retorna sinais desconhecidos e resultado inconclusivo; `GeminiProvider` envia o JPEG limpo à API `generateContent` do Google e valida a resposta estruturada com Pydantic. Ambos estão ligados ao envio de ocorrência. **Uma chamada real com `gemini-3.8-flash` funcionou usando imagem sintética uniforme: HTTP 200, `status=completed`, `simulated=false`, `classification=inconclusive`. [Evidência](docs/vision-live-check.json). Isso valida o contrato adaptador/API em um exemplo, não a qualidade de detecção nem uma ocorrência real persistida de ponta a ponta. A credencial foi usada apenas em memória, sem salvamento.**
-
-| VISION_MODE / resultado | Resultado armazenado |
-|---|---|
-| `simulated` (padrão) | `status=simulated`, `simulated=true`, sinais incertos, `classification=inconclusive` |
-| `gemini`, resposta aceita | `status=completed`, `simulated=false`, evidências validadas e `model_version` devolvida pelo provedor |
-| Timeout, resposta bloqueada/truncada/inválida, erro HTTP ou transporte Gemini | `status=unavailable`, `simulated=false`, sinais desconhecidos, `classification=inconclusive`, `error_code` controlado |
-
-`VISION_MODE` independe do `DATA_MODE` ambiental. Gemini exige `GEMINI_API_KEY` e `GEMINI_MODEL` no backend; falta de configuração ou modo desconhecido impede o startup. Nenhum ID de modelo é presumido silenciosamente. Escolha um modelo disponível à conta, com visão e JSON estruturado, e valide-o antes de uso operacional. Configure `.env` e recrie o backend:
-
-```bash
-# No .env: VISION_MODE=gemini, GEMINI_API_KEY=<segredo do servidor>, GEMINI_MODEL=<ID de modelo compatível>
-docker compose up --build -d backend
-```
-
-O resultado aparece no campo `ai` da ocorrência e fica persistido na coluna existente `ai_json`. Resultados antigos são preservados; reenviar um UUID existente não o reanalisa. Não há endpoint de reanálise nem worker persistente nesta fase.
-
-### Saída estruturada
-
-| Campo | Significado / validação |
-|---|---|
-| `signals.fire`, `.smoke`, `.dry_vegetation`, `.burned_vegetation` | Cada um contém `presence` (`present`, `absent`, `uncertain`), `confidence` e justificativa de 1–240 caracteres |
-| `confidence` de cada sinal | Valor declarado pelo modelo entre 0 e 1; nulo para sinal incerto. **Não é probabilidade calibrada nem acurácia medida.** A confiança global legada continua nula |
-| `image_assessable`, `limitations` | Booleano e `dark`, `blurry`, `no_sky`, `obstructed`, `low_resolution`, `overexposed`, `cropped`, `other`; falha do provedor não inventa limitações da foto |
-| `classification` | `fire_suspected`, `smoke_suspected`, `dry_vegetation`, `burned_area`, `no_signs`, `inconclusive` |
-| `model_version`, `requested_model`, `prompt_version`, `schema_version` | Versão retornada pelo provedor após sucesso, ID configurado, `terra-firma-vision-v1`, `1.0`; versão de modelo nula na simulação/falha |
-| `human_review_required` | Sempre true. A IA nunca muda automaticamente o status de revisão |
-
-Os quatro sinais são obrigatórios; campos desconhecidos, confiança não finita/fora do intervalo e classificações contraditórias são rejeitados. Uma suspeita exige o sinal correspondente presente. `no_signs` exige os quatro sinais ausentes e imagem avaliável. Imagem não avaliável exige `inconclusive`. `burned_area` significa indício visual de vegetação queimada, **não hectares nem incêndio confirmado**. Veja [o schema de saída](backend/vision-result.schema.json) e [decisões e contrato](docs/VISAO.md).
-
-### Execução e escopo restante
-
-Autorização e idempotência são verificadas antes do modelo. Só são enviados JPEG reencodificado, instruções e schema; não são enviados dados do agricultor, descrição ou localização. Reenvio aceito não chama Gemini novamente, inclusive em concorrência. Falhas do provedor permitem registrar o relato para revisão humana, sem fallback silencioso para simulação.
-
-O processamento é síncrono na requisição/transação atual, com timeout HTTP de 20 segundos por operação (conexão: 5 segundos), uma tentativa e nenhum retry automático. Isso acrescenta latência e mantém o lock do banco. Falha do processo após consultar o provedor e antes do commit pode gerar outra chamada cobrada no reenvio; não existe garantia de execução externa exatamente uma vez nem fila durável. O prompt trata texto na foto como conteúdo não confiável; é uma precaução, não uma garantia medida contra injeção de instruções.
-
-A Fase 3 consulta contexto ambiental no envio de novos incidentes com coordenadas, persiste o snapshot e cruza focos em espaço/tempo, preservando clima e análise visual. `GET /v1/properties/{id}/environment` continua como consulta atual separada da propriedade. Horário de captura, worker persistente e índice de risco continuam ausentes. Foto isolada não comprova localização, umidade ou hectares queimados. Ausência de sinais/focos não comprova segurança. Próximos passos: validação autorizada com fotos reais/de ponta a ponta em campo, avaliação independente com imagens rotuladas e processamento persistente em worker. Nenhuma métrica de acurácia de IA foi medida.
-
-## Cruzamento de evidências
-
-**Verificação ambiental real:** NASA FIRMS (`VIIRS_SNPP_NRT`) e Open-Meteo retornaram HTTP 200, `status=ok`, `simulated=false` em coordenadas de demonstração perto de Campinas (10 km, 2 dias solicitados, cruzamento de 24 h). FIRMS retornou lista vazia válida; a evidência ficou `no_nearby_hotspot`. [Snapshot sanitizado](docs/firms-live-check.json). A visão foi deliberadamente simulada nesse teste, por isso o agregado permanece `simulated=true`; isso não torna simuladas as observações ambientais. Nenhuma credencial foi salva, não houve ocorrência real persistida, e lista vazia não comprova segurança. Os padrões do servidor não mudaram; live foi selecionado apenas nessa verificação em memória.
-
-Novos incidentes com coordenadas autorizadas consultam dados-api pelo ponto do incidente e persistem `environment_snapshot` e `evidence`, com fontes, horários de observação/coleta, avisos e indicadores de simulação. Padrões: **10 km / 24 horas anteriores ao recebimento pelo servidor**, inclusivos. O backend solicita 2 dias ao provedor no padrão (margem diária) e aplica a janela exata localmente. São heurísticas de contexto do MVP, não limiares de risco calibrados; veja [decisões](docs/DECISOES.md).
-
-| consistency | Significado |
-|---|---|
-| `consistent` | Ambas as fontes ambientais ok e pelo menos um foco espacial/temporalmente compatível |
-| `no_nearby_hotspot` | Ambas ok, sem foco retornado compatível; o relato continua válido para revisão |
-| `unavailable` | Sem localização, fonte stale/indisponível ou contexto inválido; preservar evidência parcial, nunca interpretar como sem risco |
-
-Distâncias dos focos são recalculadas; cada correspondência preserva fonte, horário, confiança categórica e diferença temporal. O clima conserva envelope e diferença temporal assinada. `consistent` não afirma concordância com a imagem nem confirma incêndio. Divergências visuais geram avisos para revisão humana. A simulação permanece por fonte e no agregado. Lista vazia difere de null/indisponível. Não se substitui localização ausente do relato pela propriedade.
-
-`GET /v1/incidents/{id}` retorna o contrato autorizado e tipado **2.1.0**, com snapshot persistido, evidência, IA e revisões. Aplicar migração **002** antes de iniciar o backend atualizado. Incidentes antigos mantêm snapshot/evidência nulos; replay e GET não buscam contexto novo. O cálculo de distância funciona no antimeridiano, mas caixas FIRMS que o cruzam continuam explicitamente indisponíveis, preservando o clima possível. Regras, parâmetros, migração e limites: [docs/CRUZAMENTO.md](docs/CRUZAMENTO.md).
-
-## Persistência e operação
-
-As tabelas principais são `cooperatives`, `users`, `properties`, `sessions`, `refresh_history`, `incidents` e `reviews`. Produtores pertencem a cooperativas; propriedades a produtores; ocorrências se vinculam à propriedade/produtor e têm histórico de revisão. Fotos ficam fora do banco.
-
-O PostGIS usa `geography(Point,4326)`, índice GiST, `ST_DWithin` e `ST_Distance` em metros. O ponto é criado com longitude antes da latitude; não equivale a limites territoriais verificados.
-
-Migrações SQL possuem versão e checksum, execução transacional e lock. Não altere migrações aplicadas: adicione novo arquivo numerado. Não há downgrade automático nem importação automática do antigo SQLite.
-
-O Compose é para desenvolvimento. Antes de uso público, completar HTTPS, credenciais distintas para migração/aplicação, rede restrita, backup e restauração de banco **e** fotos, monitoramento, limites distribuídos e avaliação de segurança. O limite de login atual é em memória por processo. A interface usa proxy de mesma origem, sem CORS aberto.
-
-Não exponha `PHOTO_DIR` como pasta pública. Múltiplas instâncias exigem volume compartilhado ou adaptador de armazenamento privado. Uma falha entre salvar foto e confirmar a transação pode deixar arquivo órfão; a limpeza automática ainda não existe.
-
-Privacidade, retenção, aviso de tratamento, acesso restrito e atendimento a solicitações dos titulares são requisitos para evolução do produto. Esta documentação não atesta conformidade jurídica ou aprovação para produção.
-
-## Integração da interface
-
-A Fase 4 adiciona `web/`, HTML/CSS/JS sem build, servido por Nginx com proxy de mesma origem para `/v1/`. Login, troca obrigatória de senha, cadastro de produtores/propriedades, envio com localização opcional, paginação, foto privada, IA, evidências e revisão com notas têm cenários de navegador em `web/tests/test_browser.py`. Tokens ficam somente em memória; sair limpa sessão e foto. Qualquer `simulated=true` aninhado mostra **DADOS SIMULADOS**. CI completo aprovado: 103 Python/PostGIS, quatro JavaScript e quatro navegador; veja [interface e roteiro](docs/INTERFACE.md).
-
-### Referência para possível aplicativo mobile
-
-O exemplo [backend/examples/expo-client.ts](backend/examples/expo-client.ts) usa `fetch`, `FormData` e `expo-secure-store`. Instale SecureStore no projeto Expo da equipe com `npx expo install expo-secure-store`. Use uma única instância de `ApiClient` para coordenar renovações.
-
-Responsabilidades ainda pendentes no aplicativo: câmera/galeria, conversão de HEIC, compressão, permissões de localização, armazenamento durável da foto, fila offline por usuário, telas e limpeza de dados privados ao sair. Não defina manualmente `Content-Type` ao enviar `FormData`; o cliente deve gerar o boundary.
-
-Para celular na mesma rede, configure `BACKEND_BIND=0.0.0.0` em rede confiável, execute `docker compose up -d backend` e utilize `http://IP_DO_COMPUTADOR:8000`. `localhost` no aparelho aponta para o próprio celular. Em ambiente público use HTTPS.
-
-Não inclua `DATA_API_KEY`, `FIRMS_MAP_KEY`, `GEMINI_API_KEY` ou `DATABASE_URL` no app; variáveis `EXPO_PUBLIC_*` são públicas. A URL de foto exige Bearer. Veja [docs/MOBILE.md](docs/MOBILE.md).
-
-## Testes e validação
-
-**Fase 3:** [CI com PostGIS aprovou 102 testes, nenhum ignorado e 1 aviso em 15,14 s](https://github.com/armandor123/terra-firma/actions/runs/42433174536), commit testado `48c9e5536dc153e0c894bad75442cfca1d6f82d2`. Inclui migração, snapshots persistidos/parciais, reenvios, autorização e bordas do cruzamento. Provedores eram controlados/demo nessa execução do CI. Uma consulta real posterior FIRMS/Open-Meteo está registrada abaixo; acurácia da associação em campo continua sem validação.
-
-**CI da Fase 2: 65 aprovados, nenhum ignorado e 1 aviso em 10,57 s**, com PostgreSQL/PostGIS. [Execução e logs](https://github.com/armandor123/terra-firma/actions/runs/42429976440), commit testado `01ae50dab2e1649a0317bc1069e12b6558c3c6ec`. A verificação local teve 49 aprovados/16 ignorados sem banco; os 16 foram posteriormente executados no CI. Os testes Gemini usam HTTP controlado, sem inferência real nem métricas de qualidade.
-
-O GitHub Actions está configurado em [`.github/workflows/tests.yml`](.github/workflows/tests.yml) para pushes, pull requests e execução manual. Ele utiliza o banco isolado de `compose.test.yaml` (`postgis/postgis:16-3.7`), aguarda o healthcheck, constrói a imagem de testes e executa a suíte completa. O exit code do serviço de testes determina o resultado do job; há diagnóstico em falha e limpeza dos containers. Não exige credenciais de provedores. **CI histórico da Fase 1 aprovado em 07/11/2026 (São Paulo): 24 aprovados, nenhum teste ignorado e 1 aviso em 6,49 s.** [Execução e logs](https://github.com/armandor123/terra-firma/actions/runs/42428442702), commit testado `4eb09cc86ed3101e1335f180fb84a6439270c714`. Todos os cenários PostgreSQL foram executados contra o banco PostGIS isolado. O ambiente Compose de desenvolvimento e provedores reais não foram exercitados por este workflow.
-
-Ambiente completo com banco temporário exclusivo:
-
-```bash
+```sh
 docker compose -f compose.test.yaml up --build --abort-on-container-exit --exit-code-from tests
-docker compose -f compose.test.yaml down
+node --test web/tests/client.test.js
+python3 scripts/test_ui.py
 ```
 
-Alternativa com dependências instaladas, na raiz do repositório:
+CI executa esses comandos com PostGIS real e stack demo descartável completa para Chromium. `scripts/test_ui.py` gera credenciais/projeto/volumes próprios e remove apenas essa stack. `python -m pytest -q` local ignora cenários de banco sem `TEST_DATABASE_URL`; testes ignorados não demonstram aprovação integral.
 
-```bash
-python -m pytest -ra -q
-```
+Fase 4 [CI 42436624805](https://github.com/armandor123/terra-firma/actions/runs/42436624805): **103 Python/PostGIS, quatro Node e quatro Chromium aprovados**, nenhum ignorado. Fase 5 [CI 42437604813](https://github.com/armandor123/terra-firma/actions/runs/42437604813), SHA `13bb5bb`: **112 Python/PostGIS, quatro Node e quatro Chromium aprovados**, nenhum ignorado, um aviso Python. Inclui três comparações exatas de contratos. Veja [registro](docs/VALIDACAO.md). OpenAPI backend **2.1.0** e dados **1.0.0** versionados e comparados aos schemas gerados.
 
-Nesse segundo fluxo, configure `TEST_DATABASE_URL` para um banco **exclusivo de testes** com PostGIS se quiser executar os cenários de banco. Sem a variável, eles são ignorados explicitamente. Os cenários criam e removem schemas próprios.
+Verificações externas separadas: uma chamada Gemini real com imagem sintética e uma consulta real NASA FIRMS/Open-Meteo num ponto de demonstração. Evidências sanitizadas: [visão](docs/vision-live-check.json), [ambiente](docs/firms-live-check.json). **Não foi demonstrado incidente live completo com foto real. Não há porcentagem de acurácia alegada.**
 
-Verificação local da Fase 1 em 07/11/2026: a descoberta padrão encontrou **24 testes**, incluindo a integração movida; a execução retornou **11 aprovados, 13 ignorados e 1 aviso em 0,96 s**, exit 0. YAML/configuração Compose e links locais dos READMEs foram conferidos estaticamente. Docker continua indisponível aqui; a execução posterior do GitHub Actions documentada acima valida remotamente a suíte PostgreSQL/PostGIS. O `conftest.py` da raiz permanece como configuração compartilhada do pytest para as três pastas de testes.
+## Repositório e documentação
 
-A execução da Fase 0 em 07/11/2026 retornou **11 aprovados, 13 ignorados e 1 aviso em 0,98 s**, exit 0. Todos os 13 skips decorreram da ausência de `TEST_DATABASE_URL`; isso **não aprova a suíte completa**. Os dois comandos Compose falharam antes de iniciar, com `docker: command not found`. Veja [docs/AUDITORIA.md](docs/AUDITORIA.md) para evidências por arquivo/linha e [docs/VALIDACAO.md](docs/VALIDACAO.md) para o histórico. O antigo `resultado-testes.txt` informava 24 aprovados sem identificar commit/ambiente; a Fase 1 o removeu do versionamento e o adicionou ao `.gitignore`. Docker/PostGIS, NASA real, execução em aparelho e qualidade de IA permanecem sem validação aqui. Os testes SQLite anteriores não comprovam esta versão PostgreSQL. A Fase 1 moveu a integração para `tests/test_integration.py` e configurou `pytest.ini` para descobrir as três pastas de testes com o comando acima.
+`backend/`: API, schemas, visão, cruzamento, migrações SQL e testes. `dados-api/`: serviço ambiental independente/testes. `web/`: interface estática/Nginx e testes de navegador/JS. `scripts/`: configuração privada e runner da stack de navegador. `tests/`: integração. [Rotas/setup direto](backend/README.md), [API de dados](dados-api/README.md), [auditoria](docs/AUDITORIA.md), [decisões](docs/DECISOES.md). Documentos anteriores de PRD/Expo/planejamento são contexto histórico, não capacidades adicionais entregues.
 
-## Identidade visual e créditos
+Proposta About: **“Terra-Firma: MVP web de relatos com fotos, visão Gemini opcional, contexto NASA FIRMS/Open-Meteo e revisão humana por cooperativas. FastAPI + PostGIS; modo demo explícito.”** About remoto ainda não alterado: integração GitHub disponível não oferece edição e navegador está sem login. Branches de desenvolvimento publicadas; main não recebeu merge automático.
 
-**Equipe — Grupo 13:** Feliphe Coutinho, Taciára Mendes, Victor Hinoue e Armando de Almeida, conforme os créditos da apresentação.
-
-O nome oficial do projeto é **Terra-Firma**. A identidade fornecida usa a marca textual “Terra Firma”. Referências antigas nos documentos de origem foram padronizadas nesta documentação.
-
-| Elemento | Diretriz do kit |
-|---|---|
-| Marinho principal | `#1B3550` |
-| Marinho escuro | `#12263A` |
-| Azul de ação | `#1F5F8B`, botões e links |
-| Azul de acento | `#009EDB`, detalhes; evitar texto sobre branco |
-| Fundo / texto | `#F3F4F6` / `#1F2933` |
-| Tipografia | Roboto no app/site; Arial em apresentações |
-| Escala visual futura de risco | Baixo `#4B7F52`, moderado `#B08A1E`, alto `#C0612B`, muito alto `#A4262C` |
-
-As cores de risco são tokens visuais, não classificações calculadas pelo backend. Toda demonstração com valores fictícios deve usar **DADOS SIMULADOS** ou “valores ilustrativos”.
-
-O ZIP de identidade contém logos SVG/PNG, 30 ícones, fotos/recortes, paleta, tokens CSS e `moodboard.html`. Ao adicioná-lo ao repositório, preserve `fotos/creditos.md` e `parceiros/LEIAME.md`.
-
-- Fotos Commons: José Cruz/Agência Brasil e Marcelo Camargo/Agência Brasil, CC BY 3.0 BR; Agência Brasil e Ibama, CC BY 2.0; Emilio Swany Guerreiro, CC BY-SA 4.0. Os créditos completos por imagem e links dos originais constam no kit e precisam acompanhar a reutilização.
-- Adaptações de `pos-arara-cinzas` seguem a mesma licença CC BY-SA 4.0. As demais fotos fornecidas pela equipe precisam ter origem/permissão confirmadas; `agricultor-queimada-roca.jpg` exige autorização de imagem documentada conforme a orientação do kit.
-- Ícones: Font Awesome Free, crédito CC BY 4.0 conforme o kit.
-- UN OICT e NTT DATA devem aparecer somente como crédito de realização do desafio, separados da marca do produto. Prefira crédito textual quando não houver orientação de uso da marca.
-
-**Projeto independente de participantes do desafio. As marcas pertencem aos seus titulares.**
-
-## Evolução do projeto
-
-| Prioridade | Próxima entrega |
-|---|---|
-| 1 | Executar e registrar os testes PostgreSQL/PostGIS e corrigir falhas |
-| 2 | Avaliar a interface web e o fluxo live com fotos autorizadas em campo |
-| 3 | Validar conectores reais, disponibilidade e apresentação dos dados |
-| 4 | Validar Gemini/cruzamento com fotos reais autorizadas e FIRMS real; manter revisão humana |
-| 5 | Adicionar filtros/exportação, notificações revisadas e métricas de uso |
-| 6 | Avaliar polígonos, fontes históricas e métodos validados de risco/propagação |
-
-Indicadores previstos: produtores/propriedades cadastrados, área cadastrada, tempo para registrar relato, percentual geolocalizado, taxa de revisão, erros de integração e qualidade da IA após avaliação. Área cadastrada não é área queimada; redução de danos ou incêndios evitados exige evidência própria.
-
-A proposta Terra-Firma 2.0 inclui estudar pontos, brindes e reconhecimento por relatos úteis e verificáveis, além de notificações ampliadas e parcerias institucionais. Essas ideias são futuras. Benefícios fiscais dependem de avaliação e decisões competentes. Conforme a apresentação, penalidades por não enviar fotos não fazem parte do MVP.
-
-## Contribuição, licença e referências
-
-Para contribuir, abra uma issue com contexto e resultado esperado, trabalhe em uma branch e envie um pull request com descrição e validação. Atualize contratos e documentação se modificar a API. Use dados fictícios ou autorizados e preserve a separação entre resultados reais e simulados.
-
-Nenhum arquivo `LICENSE` foi identificado na revisão consultada. A licença do código precisa ser definida pelo responsável; não presuma MIT ou outra licença. Fotos, ícones e marcas têm condições próprias.
-
-A Fase 1 registra **MIT como proposta, pendente da decisão dos autores**, em [docs/DECISOES.md](docs/DECISOES.md); ela não foi adotada. O documento também contém uma sugestão de descrição About; nenhum metadado remoto foi alterado.
-
-Documentação técnica complementar:
-
-- [Inputs e contratos](docs/INPUTS-E-CONTRATOS.md)
-- [Explicação técnica](docs/EXPLICACAO-TECNICA.md)
-- [Roteiro de demonstração](docs/ROTEIRO-DEMO.md)
-- [Escopo e evolução](docs/ESCOPO-E-EVOLUCAO.md)
-- [Validação](docs/VALIDACAO.md)
-- [Plano de IA e testes](docs/PLANO-IA-E-TESTES.md)
-
-Referências dos conectores: [Open-Meteo](https://open-meteo.com/en/docs) e [NASA FIRMS API](https://firms.modaps.eosdis.nasa.gov/api/).
-
-**Base histórica da Fase 0 — 07/11/2026:** auditoria do código da revisão `1825555f9a714ffab131a3e7796f4223bb753944` e execução local de testes registrada acima. As descrições de produto, apresentação e identidade visual foram preservadas da documentação de 06/11; seus arquivos externos não foram revalidados. Não houve nova chamada real a provedor ou modelo. Esta fase altera somente documentação e permanece bloqueada para validação integral do banco/ambiente.
+Nenhuma LICENSE de código foi adotada. MIT é somente proposta em [DECISOES.md](docs/DECISOES.md), pendente de decisão dos autores. Fotos/ícones/marcas têm termos próprios. Kit visual externo não está incluído; confirme permissões/créditos antes de reutilizar. Esta interface usa fontes do sistema e monograma de texto, sem esses assets externos.

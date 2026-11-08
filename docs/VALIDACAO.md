@@ -1,4 +1,16 @@
-# Validação — versão 2, PostgreSQL/mobile
+# Validação — histórico e Fases 4–5
+
+## Fase 5 — resultado final de código, 08/11/2026 UTC
+
+[CI 42437604813](https://github.com/armandor123/terra-firma/actions/runs/42437604813), SHA `13bb5bb2f93a50d3867b70d36f7ff474accf55d0`: **112 Python/PostGIS aprovados em 16,02 s, nenhum ignorado, um aviso; quatro Node e quatro Chromium aprovados (8,04 s)**. Inclui três comparações estruturais exatas dos contratos publicados/gerados. Não houve mudança de contrato: backend 2.1.0, dados 1.0.0 e metadata preservados.
+
+Antes desses três casos, [CI 42437125900](https://github.com/armandor123/terra-firma/actions/runs/42437125900), SHA `e69372c0fd33a205164202cbe153f7e6d9b86f51`: 109 Python/PostGIS aprovados em 15,31 s, nenhum ignorado, um aviso; quatro Node e quatro Chromium (7,83 s). Ambos exercitaram a stack de desenvolvimento do zero com bootstrap e identidade DML, sem credenciais externas.
+
+Testes novos: contagem atômica concorrente e expiração; login/API entre duas apps; replay sob limite de upload; limpeza dry-run/apply preservando referências, arquivos novos/estranhos e symlinks; exclusão mútua dos locks; papel DML permite negócio e nega DDL/acesso de migração; gerador não sobrescreve nem imprime segredos. Fluxo de navegador de Fase 4 repetido com identidade DML.
+
+Local: 84 aprovados, 28 ignorados (sem PostGIS), um aviso em 1,36 s; quatro Node aprovados. Git diff --check e links dos READMEs/documentos canônicos válidos. Verificação de fingerprints das credenciais fornecidas: ausentes dos arquivos rastreados, sem imprimir valores.
+
+A única advertência Python é StarletteDeprecationWarning sobre TestClient/HTTPX; não é teste ignorado nem falha. Nenhuma acurácia medida. **Aceite integral ainda pendente**: demonstração live completa com foto real autorizada, snapshot real persistido e revisão; About remoto ainda descreve mobile, integração não tem edição e navegador sem autenticação. Não houve merge automático em main. Consulte AUDITORIA.md para evidência por afirmação; OPERACAO.md e PRIVACIDADE-LGPD.md para limites operacionais e decisões humanas.
 
 ## Verificação ambiental externa — 07/11/2026, 22:29 (São Paulo)
 

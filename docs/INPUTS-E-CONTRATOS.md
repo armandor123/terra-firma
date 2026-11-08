@@ -1,5 +1,7 @@
 # Inputs, outputs e integração — dados 1.0 / backend 2.1
 
+> Documento de referência/histórico. Para o estado entregue nas Fases 4–5, use [README.pt-BR](../README.pt-BR.md), [INTERFACE](INTERFACE.md), [OPERACAO](OPERACAO.md) e [auditoria atual](AUDITORIA.md). Propostas anteriores não são funcionalidades adicionais implementadas.
+
 ## 1. Entrada principal do projeto de dados
 
 `POST /v1/context`, JSON, header `X-API-Key` obrigatório (mínimo de 24 caracteres configurado no servidor).

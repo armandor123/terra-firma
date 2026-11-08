@@ -1,6 +1,6 @@
 # Backend oficial — PostgreSQL/PostGIS e mobile
 
-Aplicação FastAPI independente, contrato 2.1.0. Para executar junto do projeto de dados, prefira o Compose da raiz. Ele inicia PostgreSQL, aplica migrações e só depois inicia a API. A migração nova 002 adiciona snapshots/evidências por incidente, preservando registros históricos como null.
+Aplicação FastAPI independente, contrato 2.1.0. Para executar junto do projeto de dados, prefira o Compose da raiz. Ele inicia PostgreSQL, aplica migrações e só depois inicia a API. A migração 002 adiciona snapshots/evidências (históricos preservados como null); 003 adiciona limites compartilhados. O migrador provisiona identidade DML distinta. Interface Nginx e bootstrap na raiz; [operação](../docs/OPERACAO.md).
 
 ## Execução sem Docker
 
@@ -14,7 +14,13 @@ export DATABASE_URL='postgresql://usuario:SENHA_URL_ENCODED@127.0.0.1:5432/terra
 export PHOTO_DIR=./data/photos
 export DATA_API_URL=http://127.0.0.1:8001
 export DATA_API_KEY='MESMA_CHAVE_DO_SERVICO_DE_DADOS'
+# No ambiente do migrador: DATABASE_URL privilegiada e credenciais DML privadas.
+export APP_DATABASE_USER=terra_firma_app
+export APP_DATABASE_PASSWORD='SENHA_APP_PRIVADA_URL_SAFE_MIN_24'
 python -m backend.migrate
+# Antes de bootstrap/API, troque DATABASE_URL para a identidade DML.
+export DATABASE_URL='postgresql://terra_firma_app:SENHA_APP_PRIVADA_URL_SAFE_MIN_24@127.0.0.1:5432/terra_firma'
+unset APP_DATABASE_PASSWORD
 python -m backend.bootstrap --username coop.admin --name 'Representante' --cooperative 'Cooperativa Demo'
 python -m uvicorn backend.main:create_app --factory --host 127.0.0.1 --port 8000
 ```
@@ -81,4 +87,4 @@ O upload com coordenadas consulta dados-api, salva `environment_snapshot` e `evi
 
 ## Limites operacionais
 
-MVP, sem recuperação de senha, MFA, push, auditoria completa de acesso, retenção automática ou processamento assíncrono de imagens. Limite de login em memória, por processo. Em produção, separar credenciais de migração/aplicação, configurar HTTPS, pool de conexões, limites distribuídos, monitoração e restauração de backups. CORS precisa de configuração explícita se houver cliente web; app nativo não depende de CORS do navegador.
+MVP, sem recuperação de senha, MFA, push, auditoria completa de acesso, retenção automática ou processamento assíncrono de imagens. Limites compartilhados em PostgreSQL (login/API/upload/refresh), credenciais DML separadas no Compose e limpeza manual de órfãs disponíveis; veja [OPERACAO.md](../docs/OPERACAO.md). Em produção, configurar HTTPS, proteção IP/gateway, pool/capacidade, monitoramento e restauração de banco/fotos. Interface Nginx usa proxy de mesma origem; cliente separado precisa de CORS específico.

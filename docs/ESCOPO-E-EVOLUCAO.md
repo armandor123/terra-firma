@@ -1,5 +1,7 @@
 # Escopo atual e evolução — versão 2
 
+> Documento de referência/histórico. Para o estado entregue nas Fases 4–5, use [README.pt-BR](../README.pt-BR.md), [INTERFACE](INTERFACE.md), [OPERACAO](OPERACAO.md) e [auditoria atual](AUDITORIA.md). Propostas anteriores não são funcionalidades adicionais implementadas.
+
 Base: PRD fornecido e decisões posteriores do usuário (mobile com Expo/React Native e PostgreSQL). A entrega mantém dados/APIs e backend de contingência separados.
 
 | Item | Estado atual |

@@ -1,5 +1,7 @@
 # Integração com React Native + Expo + TypeScript
 
+> Documento de referência/histórico. Para o estado entregue nas Fases 4–5, use [README.pt-BR](../README.pt-BR.md), [INTERFACE](INTERFACE.md), [OPERACAO](OPERACAO.md) e [auditoria atual](AUDITORIA.md). Propostas anteriores não são funcionalidades adicionais implementadas.
+
 A tecnologia do aplicativo está definida. Esta entrega prepara as APIs e inclui um cliente de referência; telas, builds Android/iOS, câmera, permissões e fila offline ainda precisam ser implementados pelo responsável mobile.
 
 ## O que o cliente de exemplo faz

@@ -1,9 +1,9 @@
-# Auditoria — Fase 0
+# Auditoria — histórico e estado entregue nas Fases 4–5
 
 Data: 07/11/2026 (America/Sao_Paulo). Repositório: `armandor123/terra-firma`.
 Base inspecionada: `1825555f9a714ffab131a3e7796f4223bb753944` (`main`).
 
-**Fase 0 parcialmente executada; bloqueada para aprovação por falta de Docker e PostgreSQL/PostGIS.** Não houve alteração de código de aplicação, testes, migração, dependências ou Compose. A auditoria não implementa IA nem cruzamento ambiental.
+**Registro histórico da Fase 0; bloqueios de banco/startup foram posteriormente resolvidos pelo CI. Consulte a tabela final das Fases 4–5 ao fim deste documento para o estado atual.** Não houve alteração de código de aplicação, testes, migração, dependências ou Compose. A auditoria não implementa IA nem cruzamento ambiental.
 
 ## Evidência posterior — 07/11/2026, 21:09 (São Paulo)
 
@@ -107,3 +107,51 @@ Até isso ocorrer, a fase permanece **bloqueada para aprovação**. A inspeção
 ## Atualização Fase 4 — 08/11/2026 UTC
 
 A tabela inicial é histórica. Interface antes ausente agora implementada: `web/public/index.html:1`, `web/public/app.js:1`, `web/nginx.conf:1`, `compose.yaml:53`; evidência executável em `web/tests/test_browser.py:1` e `web/tests/client.test.js:1`. Bootstrap sem conta padrão em `backend/backend/bootstrap.py:1`, configuração privada em `scripts/configure.py:1`. [CI 42436624805](https://github.com/armandor123/terra-firma/actions/runs/42436624805): 103 Python/PostGIS, quatro JavaScript, quatro navegador aprovados; stack de desenvolvimento e bootstrap confirmados. Confere para fluxo demo; live com foto real ainda não demonstrado. Sem mudança em contratos HTTP nesta fase.
+
+## Tabela atual — Fases 4–5 (08/11/2026 UTC)
+
+A tabela inicial e seus bloqueios são históricos. Esta tabela substitui o estado das afirmações nos READMEs EN/PT-BR na branch `feat/fase-5-operacao`; main ainda não recebeu merge. Cada linha agrupa afirmações equivalentes nas duas línguas. `confere` significa correspondência com código e limites documentados, não prontidão para produção ou qualidade visual.
+
+| Afirmação do README | Evidência no código (arquivo:linha) | Teste/verificação | Status |
+|---|---|---|---|
+| MVP web Nginx/FastAPI/PostGIS, sem build frontend | `web/Dockerfile:1`; `web/nginx.conf:16`; `compose.yaml:54` | `web/tests/test_browser.py:89` — jornada na stack completa | confere |
+| Login Argon2, troca inicial, revogação e papéis | `backend/backend/main.py:31`, `:100`, `:141`, `:192` | `backend/tests/test_backend.py:56`; jornada de navegador | confere |
+| Access 900 s, refresh 30 dias absoluto/rotativo, reuso revoga | `backend/backend/main.py:152`, `:160` | test_refresh_rotation_replay_and_logout / test_refresh_survives_access_expiry em test_backend.py | confere |
+| Isolamento por cooperativa/autor e autorização de foto | `backend/backend/main.py:110`, `:117`, `:330` | test_property_registration_and_cooperative_isolation / test_full_incident_review_flow_and_image | confere |
+| Criar/listar produtores/propriedades e proximidade por ponto PostGIS | `backend/backend/main.py:209`, `:220`, `:225`, `:236`, `:242`; `backend/backend/migrations/001_initial.sql:8` | test_property_registration_and_cooperative_isolation / test_postgis_distance_and_scope; cadastro no navegador | confere |
+| JPEG/PNG até 3 MB/12 MP, corpo 4,1 MB, EXIF removido e foto privada | `backend/backend/main.py:44`, `:74`, `:330`; `backend/backend/storage.py:9` | test_photo_exif_removed_and_format_checked / test_bad_image_and_location_rejected / jornada | confere |
+| Localização opcional/autorizada/não verificada; sem substituir ponto; referência de recebimento | `backend/backend/schemas.py:31`; `backend/backend/evidence.py:132`; `backend/backend/main.py:273` | `backend/tests/test_evidence.py:143`; `web/tests/test_browser.py:195` | confere |
+| UUID idempotente por agricultor, 409 conflitante, concorrência; tentativa web em memória | `backend/backend/main.py:272`, `:288`; `web/public/app.js:147` | test_idempotent_retry_and_payload_conflict / test_concurrent_duplicate_upload; `web/tests/test_browser.py:172` | confere |
+| VisionProvider/simulado/Gemini e saída estruturada: quatro sinais, seis classes, limitações, versões | `backend/backend/vision.py:31`, `:37`, `:67`; `backend/backend/vision_models.py:20`, `:34`, `:41`, `:63` | `backend/tests/test_vision.py:36`, `:71`, `:116`, `:144`, `:182`; persistência em test_backend.py | confere |
+| IA não confirma fogo, inconclusivo válido e revisão humana obrigatória; confiança não é acurácia | `backend/backend/vision.py:12`; `backend/backend/vision_models.py:63` | test_provenance_is_server_owned_and_human_review_cannot_be_disabled; nenhuma avaliação rotulada registrada | confere |
+| NASA/Open-Meteo, fontes/horários/status/avisos, partial, vazio distinto de unavailable, sem fallback demo | `dados-api/dados/providers.py:21`, `:40`, `:64`, `:107`; `dados-api/dados/models.py:30` | `dados-api/tests/test_data.py:33`, `:47`, `:55`, `:65`, `:68`; `tests/test_integration.py:13` | confere |
+| Demo explícito, simulação por fonte/agregado, falha real não vira simulação | `dados-api/dados/main.py:12`, `:37`; `backend/backend/evidence.py:174`; `.env.example:1` | test_demo_contract_auth_and_validation / test_consistency_is_context_compatibility_not_ai_confirmation | confere |
+| Snapshot imutável no incidente, histórico nullable, replay/GET não consultam | `backend/backend/main.py:124`, `:301`, `:323`; `backend/backend/migrations/002_incident_evidence.sql:1` | test_incident_environment_snapshot_is_saved_once_and_scoped / test_evidence_migration_preserves_legacy_json_and_null_snapshot | confere |
+| Raio 10 km/janela retroativa 24 h; 1–50/1–96, distância/tempo/confiança, clima; sem confirmação | `backend/backend/evidence.py:17`, `:91`, `:174`; `docs/DECISOES.md:1` | `backend/tests/test_evidence.py:46`, `:61`, `:68`, `:114`, `:135`, `:198` | confere |
+| Sem GPS/fonte stale/falha: unavailable parcial; vazio não invalida relato | `backend/backend/evidence.py:132`, `:174` | `backend/tests/test_evidence.py:95`, `:127`, `:143`, `:172` | confere |
+| Antimeridiano: distância válida, caixa FIRMS indisponível com clima preservado | `backend/backend/evidence.py:167`; `dados-api/dados/providers.py:93` | `backend/tests/test_evidence.py:75`; `tests/test_integration.py:45` | confere |
+| Paginação, detalhe, revisão/notas/trilha, escalonamento interno | `backend/backend/main.py:315`, `:323`, `:340`; `web/public/app.js:66`, `:81` | test_full_incident_review_flow_and_image; `web/tests/test_browser.py:89`, `:154` | confere |
+| DADOS SIMULADOS para qualquer simulated=true aninhado | `web/public/client.js:1`; `web/public/app.js:14` | `web/tests/client.test.js:1`; jornada de navegador | confere |
+| Tokens em memória, refresh único e logout limpa sessão/foto, texto sem HTML | `web/public/client.js:12`; `web/public/app.js:25`, `:81` | quatro testes Node; jornada testa storage vazio, blob privado e texto XSS literal | confere |
+| Proxy de mesma origem/CSP/no-store/nosniff, nenhuma chave interna no frontend | `web/nginx.conf:8`, `:12`, `:16`; `web/public/client.js:12`; inventário web/public | Jornada passa pelo Nginx; inspeção de headers/configuração e conteúdo; sem CORS aberto | confere |
+| Limites PostgreSQL entre réplicas, 429/Retry-After; replay não conta novo upload | `backend/backend/limits.py:11`; `backend/backend/main.py:89`, `:141`, `:160`, `:295`; `backend/backend/migrations/003_rate_limits.sql:1` | `backend/tests/test_limits.py:20`, `:37`, `:52` — concorrência, expiração, duas apps e replay | confere |
+| Limitação: rotas públicas/IP/novos usernames exigem gateway; cache ambiental por processo | `backend/backend/main.py:89`, `:141`, `:160`; `dados-api/dados/main.py:21`, `:45`; `docs/OPERACAO.md:1` | Inspeção de escopo; não alegamos limitador global público nem proteção DDoS | confere |
+| Limpeza manual dry-run/apply, 24 h, referências/novos/estranhos/symlinks preservados e lock | `backend/backend/cleanup_photos.py:12`; `backend/backend/main.py:297` | `backend/tests/test_cleanup.py:21`, `:43` | confere |
+| Credenciais DML/migrador distintas e provisionamento sem privilégios de DDL/migração | `compose.yaml:19`, `:20`, `:38`; `backend/backend/provision.py:10` | `backend/tests/test_provision.py:22`; stack Chromium inicia com DML | confere |
+| Configuração privada sem sobrescrever, Compose + bootstrap usável do zero demo | `scripts/configure.py:8`; `backend/backend/bootstrap.py:1`; `scripts/test_ui.py:16` | `backend/tests/test_web_setup.py:7`; quatro Chromium após bootstrap em stack vazia | confere |
+| Contratos backend 2.1.0/dados 1.0.0 e metadata versionados iguais aos gerados | `backend/openapi.json:1`; `dados-api/openapi.json:1`; `backend/incident-metadata.schema.json:1` | `tests/test_contracts.py:11` — três comparações estruturais, sem ignorar diferenças | confere |
+| Resumo acumulado/minuta/SOS sem envio externo | `backend/backend/main.py:353`, `:363`, `:375` | `backend/tests/test_backend.py:39`, `:94` | confere |
+| Privacidade: checklist/aviso provisório, sem conformidade/retencão automática/portal completo de direitos | `docs/PRIVACIDADE-LGPD.md:1`; `web/public/privacy.html:1`; inventário das rotas | Inspeção de documentos/rotas; decisões do controlador abertas | confere |
+| Worker/offline/push/polígonos/INPE/MapBiomas/risco não implementados; Expo só referência | Inventário Git; `compose.yaml:1`; `dados-api/dados/main.py:42`; `backend/examples/expo-client.ts:1` | test_demo_contract_auth_and_validation verifica risco nulo; inspeção, sem inventar teste de recurso ausente | confere |
+| Chamadas externas separadas, sem acurácia/fluxo live real completo | `docs/vision-live-check.json:1`; `docs/firms-live-check.json:1`; `docs/VALIDACAO.md:1` | Evidências externas sintética/ponto público anteriores, não E2E persistido | confere |
+| README PT nomeado/links, resultado-testes ignorado, testes organizados, CI completo | `README.pt-BR.md:1`; `.gitignore:8`; `pytest.ini:3`; `.github/workflows/tests.yml:1` | Inventário Git e execuções CI abaixo | confere |
+| Sem LICENSE adotada; MIT só proposta; kit visual externo ausente e monograma/fontes locais | `docs/DECISOES.md:1`; inventário Git; `web/public/index.html:1`; `web/public/style.css:1` | Inspeção; autoria/licença/atribuição não decididas autonomamente | confere |
+| Critério: About remoto coincide com versão web entregue | About público ainda descreve mobile/Expo; sugestão atual salva no README/DECISOES | Página pública consultada em 08/11/2026, sem sessão autenticada; integração sem edição de About | diverge |
+| Critério: demonstração live completa com foto real, persistência e revisão da mesma ocorrência | Há adaptadores/snapshot/revisão, mas não há evidência dessa execução real conjunta | Não realizada; não substituída por mocks ou duas consultas separadas | não existe |
+
+### Resultado e limites do aceite
+
+- Fase 4: [CI 42436624805](https://github.com/armandor123/terra-firma/actions/runs/42436624805), SHA f45e67d76cffb8cd99970e5420a60aa440051254: 103 Python/PostGIS aprovados, um aviso, nenhum ignorado (12,45 s); quatro Node e quatro Chromium (7,29 s). Stack completa vazia e bootstrap demonstrados.
+- Fase 5: [CI 42437125900](https://github.com/armandor123/terra-firma/actions/runs/42437125900), SHA e69372c0fd33a205164202cbe153f7e6d9b86f51: 109 Python/PostGIS aprovados, um aviso, nenhum ignorado (15,31 s); quatro Node e quatro Chromium (7,83 s), com usuário DML.
+- CI ampliado [42437604813](https://github.com/armandor123/terra-firma/actions/runs/42437604813), SHA 13bb5bb2f93a50d3867b70d36f7ff474accf55d0: **112 Python/PostGIS aprovados em 16,02 s, nenhum ignorado, um aviso; quatro Node e quatro Chromium aprovados em 8,04 s**. Inclui três comparações exatas de contratos. Local: 84 aprovados, 28 ignorados (sem PostGIS), um aviso em 1,36 s.
+- Nenhuma afirmação atual ficou sem evidência ou limite explícito. **Aceite final integral pendente** de demonstração live completa e atualização autenticada do About. HTTPS/retenção/base legal/contato/backup e preparação de produção não são apresentados como concluídos. Chaves fornecidas não foram versionadas nem colocadas no frontend.

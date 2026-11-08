@@ -1,5 +1,7 @@
 # Explicação técnica — versão 2
 
+> Documento de referência/histórico. Para o estado entregue nas Fases 4–5, use [README.pt-BR](../README.pt-BR.md), [INTERFACE](INTERFACE.md), [OPERACAO](OPERACAO.md) e [auditoria atual](AUDITORIA.md). Propostas anteriores não são funcionalidades adicionais implementadas.
+
 ## Decisões
 
 Mantidos os dois projetos separados: `dados-api` é o serviço de integrações e dados; `backend` é o backend oficial do Terra-Firma. O aplicativo foi definido como React Native/Expo/TypeScript; ambos os servidores continuam em Python/FastAPI.
