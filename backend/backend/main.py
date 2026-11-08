@@ -23,6 +23,7 @@ from pwdlib import PasswordHash
 from .db import connect, database_url
 from .storage import PhotoStore
 from .schemas import Login, Password, Farmer, Property, Incident, Review, Refresh
+from .vision import VisionProvider, get_vision_provider
 
 passwords = PasswordHash.recommended()
 bearer = HTTPBearer(auto_error=False)
@@ -53,11 +54,13 @@ def clean_image(raw):
     except (ValueError,UnidentifiedImageError,OSError,Image.DecompressionBombError,Image.DecompressionBombWarning):
         raise HTTPException(422,'Foto inválida: envie JPEG/PNG, até 3 MB e 12 megapixels')
 
-def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, photo_dir=None):
+def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, photo_dir=None,
+               vision_provider: VisionProvider | None = None):
     db_url = database_url(db_url)
     store = PhotoStore(photo_dir or os.getenv('PHOTO_DIR','./data/photos'))
     data_url = (data_url or os.getenv('DATA_API_URL','http://127.0.0.1:8001')).rstrip('/')
     data_key = data_key or os.getenv('DATA_API_KEY','')
+    vision = vision_provider if vision_provider is not None else get_vision_provider()
     app = FastAPI(title='Terra-Firma — Backend',version='2.0.0')
     dummy_hash = passwords.hash(secrets.token_urlsafe(24))
     login_attempts = {}
@@ -289,8 +292,9 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
                 return {'id':existing['id'],'replayed':True}
             incident_id=uid()
             photo_key=store.put(image)
-            ai={'status':'simulated','simulated':True,'classification':'inconclusive','confidence':None,
-                'warning':'Nenhum modelo de IA foi executado; revisão humana necessária.'}
+            # Após autorização e deduplicação; somente JPEG reencodificado sem EXIF.
+            # No MVP esta chamada é síncrona e mantém o lock até concluir a transação.
+            ai=vision.analyze(image).model_dump(mode='json')
             db.execute("""INSERT INTO incidents(id,property_id,farmer_id,description,latitude,longitude,
                 location_source,location_authorized,created_at,status,photo_key,photo_type,ai_json,client_request_id,request_hash)
                 VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
@@ -341,9 +345,11 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
     def draft(incident_id: str,user=Depends(cooperative)):
         with connect(db_url) as db:
             row = incident_access(db,incident_id,user)
+        analysis_note = ('A classificação de IA é simulada. ' if row['ai_json'].get('simulated',True)
+                         else 'A análise automática não confirma incêndio. ')
         return {'draft':True,'sent':False,'text':f"MINUTA PARA REVISÃO — Ocorrência {incident_id}, registrada em {row['created_at']}. "
             f"Status interno: {row['status']}. Relato do agricultor: {row['description']}. "
-            'A classificação de IA é simulada. Verifique as evidências antes de qualquer comunicação.'}
+            + analysis_note + 'Verifique as evidências antes de qualquer comunicação.'}
 
     @app.get('/v1/reports/summary')
     def summary(user=Depends(cooperative)):

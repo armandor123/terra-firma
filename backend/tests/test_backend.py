@@ -165,3 +165,78 @@ def test_refresh_survives_access_expiry(system):
         db.execute('UPDATE sessions SET expires=0 WHERE token_hash=%s',(digest(tokens['access_token']),))
     assert c.get('/v1/me',headers=h(tokens['access_token'])).status_code==401
     assert c.post('/v1/auth/refresh',json={'refresh_token':tokens['refresh_token']}).status_code==200
+
+
+@pytest.mark.parametrize('available', [True, False])
+def test_vision_persisted_after_authorization_and_deduplication(system,tmp_path,available):
+    from backend.vision import GeminiProvider
+    c,path=system
+    calls=[]
+    def handle(request):
+        import base64
+        body=json.loads(request.content)
+        image=base64.b64decode(body['contents'][0]['parts'][0]['inlineData']['data'])
+        with Image.open(io.BytesIO(image)) as clean:
+            assert clean.format=='JPEG' and not clean.getexif()
+        assert 'private metadata' not in request.content.decode()
+        calls.append(request)
+        visual={'signals':{name:{'presence':'absent','confidence':0.5,'justification':'Resposta de teste.'}
+                           for name in ('fire','smoke','dry_vegetation','burned_vegetation')},
+                'image_assessable':True,'limitations':[],'classification':'no_signs'}
+        return (httpx.Response(200,json={'modelVersion':'test-version','candidates':[
+            {'finishReason':'STOP','content':{'parts':[{'text':json.dumps(visual)}]}}]})
+            if available else httpx.Response(503,text='private upstream error'))
+    vision=GeminiProvider('test-only-key','test-model',transport=httpx.MockTransport(handle))
+    c=TestClient(create_app(path,photo_dir=tmp_path/'vision-photos',vision_provider=vision))
+    assert send(c,property_id='missing').status_code==404
+    assert send(c,raw=b'bad image').status_code==422
+    assert calls==[]
+    original=io.BytesIO()
+    exif=Image.Exif()
+    exif[270]='private metadata'
+    Image.new('RGB',(10,10),'green').save(original,format='JPEG',exif=exif)
+    request_id=str(uuid.uuid4())
+    first=send(c,raw=original.getvalue(),request_id=request_id)
+    again=send(c,raw=original.getvalue(),request_id=request_id)
+    assert first.status_code==again.status_code==201
+    assert first.json()['id']==again.json()['id']
+    assert again.json()['replayed'] is True and len(calls)==1
+    assert send(c,raw=original.getvalue(),request_id=request_id,description='changed').status_code==409
+    assert len(calls)==1
+    iid=first.json()['id']
+    item=c.get(f'/v1/incidents/{iid}',headers=h('farmer')).json()
+    assert item['status']=='submitted'
+    assert item['ai']['simulated'] is False
+    assert item['ai']['human_review_required'] is True
+    assert item['ai']['status']==('completed' if available else 'unavailable')
+    assert item['ai']['classification']==('no_signs' if available else 'inconclusive')
+    assert item['ai']['model_version']==('test-version' if available else None)
+    assert c.get(f'/v1/incidents/{iid}',headers=h('other')).status_code==404
+    assert c.get(f'/v1/incidents/{iid}',headers=h('outsider')).status_code==404
+    assert c.get(f'/v1/incidents/{iid}/photo',headers=h('outsider')).status_code==404
+    draft=c.get(f'/v1/incidents/{iid}/notification-draft',headers=h('admin')).json()
+    assert draft['sent'] is False and 'é simulada' not in draft['text']
+    assert c.patch(f'/v1/incidents/{iid}/review',headers=h('admin'),
+                   json={'status':'verified','notes':'Ainda não permitido'}).status_code==409
+    for status in ('under_review','verified','escalated'):
+        assert c.patch(f'/v1/incidents/{iid}/review',headers=h('admin'),
+                       json={'status':status,'notes':'Avaliação humana de teste'}).status_code==200
+
+
+def test_concurrent_retry_does_not_repeat_vision_call(system,tmp_path):
+    from concurrent.futures import ThreadPoolExecutor
+    from backend.vision import SimulatedProvider
+    class CountingProvider(SimulatedProvider):
+        calls=0
+        def analyze(self,image):
+            self.calls+=1
+            return super().analyze(image)
+    _,path=system
+    vision=CountingProvider()
+    c=TestClient(create_app(path,photo_dir=tmp_path/'vision-photos',vision_provider=vision))
+    request_id=str(uuid.uuid4())
+    with ThreadPoolExecutor(max_workers=2) as pool:
+        results=list(pool.map(lambda _:send(c,request_id=request_id),range(2)))
+    assert all(r.status_code==201 for r in results)
+    assert results[0].json()['id']==results[1].json()['id']
+    assert vision.calls==1

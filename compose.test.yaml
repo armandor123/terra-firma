@@ -19,6 +19,7 @@ services:
       dockerfile: Dockerfile.tests
     environment:
       TEST_DATABASE_URL: postgresql://test_user:local-test-only@test-db:5432/terra_firma_test
+      VISION_MODE: simulated
     depends_on:
       test-db:
         condition: service_healthy
