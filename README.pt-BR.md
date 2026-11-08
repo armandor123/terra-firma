@@ -452,6 +452,8 @@ Não inclua `DATA_API_KEY`, `FIRMS_MAP_KEY` ou `DATABASE_URL` no app; variáveis
 
 ## Testes e validação
 
+O GitHub Actions está configurado em [`.github/workflows/tests.yml`](.github/workflows/tests.yml) para pushes, pull requests e execução manual. Ele utiliza o banco isolado de `compose.test.yaml` (`postgis/postgis:16-3.7`), aguarda o healthcheck, constrói a imagem de testes e executa a suíte completa. O exit code do serviço de testes determina o resultado do job; há diagnóstico em falha e limpeza dos containers. Não exige credenciais de provedores. **O workflow ainda não foi executado no GitHub; sua presença não significa CI aprovado.**
+
 Ambiente completo com banco temporário exclusivo:
 
 ```bash
@@ -466,6 +468,8 @@ python -m pytest -ra -q
 ```
 
 Nesse segundo fluxo, configure `TEST_DATABASE_URL` para um banco **exclusivo de testes** com PostGIS se quiser executar os cenários de banco. Sem a variável, eles são ignorados explicitamente. Os cenários criam e removem schemas próprios.
+
+Verificação local da Fase 1 em 07/11/2026: a descoberta padrão encontrou **24 testes**, incluindo a integração movida; a execução retornou **11 aprovados, 13 ignorados e 1 aviso em 0,96 s**, exit 0. YAML/configuração Compose e links locais dos READMEs foram conferidos estaticamente. Docker continua indisponível aqui; PostgreSQL/PostGIS e execução do CI permanecem pendentes. O `conftest.py` da raiz permanece como configuração compartilhada do pytest para as três pastas de testes.
 
 A execução da Fase 0 em 07/11/2026 retornou **11 aprovados, 13 ignorados e 1 aviso em 0,98 s**, exit 0. Todos os 13 skips decorreram da ausência de `TEST_DATABASE_URL`; isso **não aprova a suíte completa**. Os dois comandos Compose falharam antes de iniciar, com `docker: command not found`. Veja [docs/AUDITORIA.md](docs/AUDITORIA.md) para evidências por arquivo/linha e [docs/VALIDACAO.md](docs/VALIDACAO.md) para o histórico. O antigo `resultado-testes.txt` informava 24 aprovados sem identificar commit/ambiente; a Fase 1 o removeu do versionamento e o adicionou ao `.gitignore`. Docker/PostGIS, NASA real, execução em aparelho e qualidade de IA permanecem sem validação aqui. Os testes SQLite anteriores não comprovam esta versão PostgreSQL. A Fase 1 moveu a integração para `tests/test_integration.py` e configurou `pytest.ini` para descobrir as três pastas de testes com o comando acima.
 

@@ -1,5 +1,18 @@
 # Validação — versão 2, PostgreSQL/mobile
 
+## Fase 1 — 07/11/2026
+
+Mudanças partem de `189311d` (Fase 0). A integração agora está em `tests/test_integration.py`; `pytest.ini` declara `backend/tests`, `dados-api/tests` e `tests` como diretórios de descoberta. O Dockerfile de testes utiliza o mesmo comando padrão do pytest. `conftest.py` permanece na raiz como configuração compartilhada, não como teste solto.
+
+- `python -m pytest --collect-only -q`: **24 tests collected in 0.34s**, incluindo a integração; exit 0.
+- `python -m pytest -ra -q`: **11 passed, 13 skipped, 1 warning in 0.96s**; exit 0. Skips por ausência de `TEST_DATABASE_URL`; aviso de depreciação TestClient/HTTPX.
+- `docker compose -f compose.test.yaml up --build --abort-on-container-exit --exit-code-from tests`: falhou com `docker: command not found` (127). Nenhum banco/container iniciado.
+- YAML do workflow/Compose inspecionado por parser; conferidos gatilhos, permissões, comando da suíte, URL PostgreSQL, imagem PostGIS e dependência do healthcheck. `git diff --check` e links relativos dos READMEs conferidos.
+
+O workflow `.github/workflows/tests.yml` está configurado para executar a suíte completa com PostGIS em push/PR/manual, mostrar logs em falha e limpar containers sempre. **Não houve execução remota do Actions, push, alteração de About ou adoção de licença.** O primeiro resultado real do CI deve ser registrado pelo SHA/URL da execução; não há comprovação de 24 testes aprovados nesta fase.
+
+`resultado-testes.txt` deixou de ser versionado e passou a ser ignorado. Referências a esse arquivo e aos caminhos antigos nas seções históricas abaixo e em `AUDITORIA.md` descrevem a revisão auditada, não a estrutura atual.
+
 ## Fase 0 — 07/11/2026
 
 Base auditada: `1825555f9a714ffab131a3e7796f4223bb753944`. Execução em Ubuntu 24.04 / Python 3.12.14, dependências dos dois requirements instaladas em virtualenv isolado.
