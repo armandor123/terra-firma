@@ -2,6 +2,7 @@
 import argparse
 import getpass
 import os
+import sys
 from pathlib import Path
 from .db import connect, database_url
 from .main import passwords, uid
@@ -12,10 +13,12 @@ def main():
     parser.add_argument('--username',required=True)
     parser.add_argument('--name',required=True)
     parser.add_argument('--cooperative',required=True)
+    parser.add_argument('--password-stdin',action='store_true',help='Ler uma senha do stdin, sem argumento ou eco; uso automatizado explícito')
     args = parser.parse_args()
     Farmer(name=args.name, username=args.username)
-    secret = getpass.getpass('Senha inicial (mínimo 12 caracteres): ')
-    if len(secret)<12 or len(secret)>128 or secret != getpass.getpass('Repita a senha: '):
+    secret = sys.stdin.readline().rstrip('\r\n') if args.password_stdin else getpass.getpass('Senha inicial (mínimo 12 caracteres): ')
+    confirmed = secret if args.password_stdin else getpass.getpass('Repita a senha: ')
+    if len(secret)<12 or len(secret)>128 or secret != confirmed:
         raise SystemExit('Senha inválida ou confirmação diferente')
     url = database_url()
     with connect(url) as db:

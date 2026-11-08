@@ -27,7 +27,7 @@ services:
       DATA_MODE: ${DATA_MODE:-demo}
       FIRMS_MAP_KEY: ${FIRMS_MAP_KEY:-}
     ports:
-      - "127.0.0.1:8001:8001"
+      - "127.0.0.1:${DATA_PORT:-8001}:8001"
   backend:
     build: ./backend
     environment:
@@ -43,11 +43,18 @@ services:
     volumes:
       - private_photos:/app/data/photos
     ports:
-      - "${BACKEND_BIND:-127.0.0.1}:8000:8000"
+      - "${BACKEND_BIND:-127.0.0.1}:${BACKEND_PORT:-8000}:8000"
     depends_on:
       migrate:
         condition: service_completed_successfully
       dados:
+        condition: service_started
+  web:
+    build: ./web
+    ports:
+      - "${WEB_BIND:-127.0.0.1}:${WEB_PORT:-8080}:80"
+    depends_on:
+      backend:
         condition: service_started
 volumes:
   postgres_data:

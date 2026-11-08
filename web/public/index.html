@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Terra-Firma · Relatos e evidências</title>
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <header class="masthead"><div class="brand"><span class="brand-mark" aria-hidden="true">TF</span><div><strong>Terra-Firma</strong><span>Relatos que ajudam a proteger</span></div></div><div id="identity"></div></header>
+  <main>
+    <div id="notice" role="status" aria-live="polite" hidden></div>
+    <section id="login-view" class="login-layout">
+      <div class="intro"><p class="eyebrow">DO CAMPO À REVISÃO HUMANA</p><h1>Uma foto.<br>Mais contexto para agir.</h1><p>Registre sinais de fogo, fumaça ou vegetação seca. A cooperativa reúne a análise da imagem, o satélite e o clima para revisar cada relato.</p><p class="callout">A plataforma não confirma incêndios nem aciona equipes. Em emergência, ligue 193.</p></div>
+      <form method="post" id="login-form" class="panel stack"><p class="eyebrow">ACESSO À PLATAFORMA</p><h2>Entrar</h2><label>Usuário<input name="username" autocomplete="username" required maxlength="80"></label><label>Senha<input name="password" type="password" autocomplete="current-password" required maxlength="128"></label><button type="submit">Entrar</button><p class="muted">O perfil e a cooperativa são definidos pela sua conta. A sessão fica somente na memória desta aba.</p></form>
+    </section>
+    <section id="password-view" class="panel narrow" hidden><form method="post" id="password-form" class="stack"><p class="eyebrow">PRIMEIRO ACESSO</p><h1>Troque sua senha</h1><p>A senha temporária precisa ser substituída antes de continuar. Depois, entre novamente.</p><label>Senha atual<input name="old_password" type="password" autocomplete="current-password" required></label><label>Nova senha<input name="new_password" type="password" autocomplete="new-password" minlength="12" maxlength="128" required></label><button type="submit">Salvar nova senha</button></form></section>
+    <section id="workspace" hidden>
+      <div class="page-heading"><div><p id="role-label" class="eyebrow"></p><h1 id="workspace-title"></h1></div><button id="reload" class="secondary">Atualizar lista</button></div>
+      <section id="farmer-tools" class="panel" hidden><form method="post" id="incident-form" class="stack"><h2>Novo relato</h2><p>Envie uma foto JPEG/PNG de até 3 MB e 12 MP. A análise é apoio à revisão humana; um resultado sem indícios não garante segurança.</p><div class="form-grid"><label>Propriedade<select name="property_id" required></select></label><label>Foto<input name="photo" type="file" accept="image/jpeg,image/png" required></label></div><label>O que você observou?<textarea name="description" maxlength="2000" rows="3"></textarea></label><div class="location-row"><button type="button" id="get-location" class="secondary">Permitir localização</button><span id="location-status">Sem localização. Você pode enviar o relato assim.</span></div><p class="muted">Ao permitir, as coordenadas serão usadas para consultar focos próximos e clima. O servidor remove EXIF da foto. A posição declarada não é verificada.</p><div class="actions"><button type="submit" id="send-incident">Enviar relato</button><button type="button" id="reset-incident" class="secondary">Nova tentativa / descartar envio pendente</button></div><p class="muted">Se a conexão falhar, use Enviar novamente sem descartar: a mesma foto e o mesmo UUID serão reutilizados.</p></form></section>
+      <details id="cooperative-tools" class="panel" hidden><summary>Cadastros da cooperativa</summary><div class="form-grid"><form method="post" id="farmer-form" class="stack"><h2>Cadastrar agricultor</h2><label>Nome<input name="name" minlength="2" maxlength="120" required></label><label>Nome de usuário<input name="username" pattern="[a-zA-Z0-9_.-]{3,80}" required></label><button type="submit">Criar agricultor</button><p id="temporary-password" role="status"></p></form><form method="post" id="property-form" class="stack"><h2>Cadastrar propriedade</h2><label>Agricultor<select name="farmer_id" required></select></label><label>Nome da propriedade<input name="name" maxlength="120"></label><div class="form-grid"><label>Município<input name="municipality" minlength="2" required></label><label>UF<input name="state" pattern="[A-Z]{2}" maxlength="2" required></label><label>Latitude<input name="latitude" type="number" step="any" min="-90" max="90" required></label><label>Longitude<input name="longitude" type="number" step="any" min="-180" max="180" required></label></div><button type="submit">Criar propriedade</button></form></div></details>
+      <div class="content-grid"><section class="panel"><div class="section-heading"><h2>Incidentes</h2><span id="page-label" class="muted"></span></div><div id="incident-list" class="incident-list"></div><nav class="actions" aria-label="Paginação"><button id="previous" class="secondary">Anterior</button><button id="next" class="secondary">Próxima</button></nav></section><section id="detail" class="panel detail"><h2>Detalhe do incidente</h2><p class="muted">Selecione um relato para ver a foto, a análise e as evidências preservadas.</p></section></div>
+    </section>
+    <footer>Terra-Firma · Evidências para revisão, com origem e limitações visíveis. <a href="/privacy.html">Privacidade e uso dos dados</a></footer>
+  </main>
+</body>
+</html>
