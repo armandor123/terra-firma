@@ -1,0 +1,219 @@
+{
+  "$defs": {
+    "Signal": {
+      "additionalProperties": false,
+      "properties": {
+        "presence": {
+          "enum": [
+            "present",
+            "absent",
+            "uncertain"
+          ],
+          "title": "Presence",
+          "type": "string"
+        },
+        "confidence": {
+          "anyOf": [
+            {
+              "maximum": 1,
+              "minimum": 0,
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Confidence"
+        },
+        "justification": {
+          "maxLength": 240,
+          "minLength": 1,
+          "title": "Justification",
+          "type": "string"
+        }
+      },
+      "required": [
+        "presence",
+        "confidence",
+        "justification"
+      ],
+      "title": "Signal",
+      "type": "object"
+    },
+    "Signals": {
+      "additionalProperties": false,
+      "properties": {
+        "fire": {
+          "$ref": "#/$defs/Signal"
+        },
+        "smoke": {
+          "$ref": "#/$defs/Signal"
+        },
+        "dry_vegetation": {
+          "$ref": "#/$defs/Signal"
+        },
+        "burned_vegetation": {
+          "$ref": "#/$defs/Signal"
+        }
+      },
+      "required": [
+        "fire",
+        "smoke",
+        "dry_vegetation",
+        "burned_vegetation"
+      ],
+      "title": "Signals",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "properties": {
+    "signals": {
+      "$ref": "#/$defs/Signals"
+    },
+    "image_assessable": {
+      "title": "Image Assessable",
+      "type": "boolean"
+    },
+    "limitations": {
+      "items": {
+        "enum": [
+          "dark",
+          "blurry",
+          "no_sky",
+          "obstructed",
+          "low_resolution",
+          "overexposed",
+          "cropped",
+          "other"
+        ],
+        "type": "string"
+      },
+      "maxItems": 8,
+      "title": "Limitations",
+      "type": "array"
+    },
+    "classification": {
+      "enum": [
+        "fire_suspected",
+        "smoke_suspected",
+        "dry_vegetation",
+        "burned_area",
+        "no_signs",
+        "inconclusive"
+      ],
+      "title": "Classification",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "1.0",
+      "default": "1.0",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "status": {
+      "enum": [
+        "simulated",
+        "completed",
+        "unavailable"
+      ],
+      "title": "Status",
+      "type": "string"
+    },
+    "provider": {
+      "enum": [
+        "simulated",
+        "gemini"
+      ],
+      "title": "Provider",
+      "type": "string"
+    },
+    "simulated": {
+      "title": "Simulated",
+      "type": "boolean"
+    },
+    "requested_model": {
+      "anyOf": [
+        {
+          "maxLength": 100,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Requested Model"
+    },
+    "model_version": {
+      "anyOf": [
+        {
+          "maxLength": 200,
+          "minLength": 1,
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Model Version"
+    },
+    "prompt_version": {
+      "const": "terra-firma-vision-v1",
+      "default": "terra-firma-vision-v1",
+      "title": "Prompt Version",
+      "type": "string"
+    },
+    "human_review_required": {
+      "const": true,
+      "default": true,
+      "title": "Human Review Required",
+      "type": "boolean"
+    },
+    "confidence": {
+      "default": null,
+      "title": "Confidence",
+      "type": "null"
+    },
+    "error_code": {
+      "anyOf": [
+        {
+          "enum": [
+            "timeout",
+            "authentication_failed",
+            "rate_limited",
+            "provider_unavailable",
+            "invalid_response",
+            "blocked_response"
+          ],
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Error Code"
+    },
+    "warning": {
+      "maxLength": 300,
+      "minLength": 1,
+      "title": "Warning",
+      "type": "string"
+    }
+  },
+  "required": [
+    "signals",
+    "image_assessable",
+    "limitations",
+    "classification",
+    "status",
+    "provider",
+    "simulated",
+    "warning"
+  ],
+  "title": "VisionResult",
+  "type": "object"
+}
