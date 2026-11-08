@@ -2,6 +2,8 @@
 
 ## Fase 5 — resultado final de código, 08/11/2026 UTC
 
+Última execução: [CI 42438024608](https://github.com/armandor123/terra-firma/actions/runs/42438024608), SHA `dee128b5ba9e74cd7f26975b0d3630dfb21d3703`: **112 Python/PostGIS aprovados em 18,37 s, nenhum ignorado, um aviso; quatro Node e quatro Chromium aprovados (8,94 s)**. Inclui ajuste final que limpa os formulários/cadastros/seleções residuais ao sair, com asserções no navegador. Alterações posteriores somente documentais.
+
 [CI 42437604813](https://github.com/armandor123/terra-firma/actions/runs/42437604813), SHA `13bb5bb2f93a50d3867b70d36f7ff474accf55d0`: **112 Python/PostGIS aprovados em 16,02 s, nenhum ignorado, um aviso; quatro Node e quatro Chromium aprovados (8,04 s)**. Inclui três comparações estruturais exatas dos contratos publicados/gerados. Não houve mudança de contrato: backend 2.1.0, dados 1.0.0 e metadata preservados.
 
 Antes desses três casos, [CI 42437125900](https://github.com/armandor123/terra-firma/actions/runs/42437125900), SHA `e69372c0fd33a205164202cbe153f7e6d9b86f51`: 109 Python/PostGIS aprovados em 15,31 s, nenhum ignorado, um aviso; quatro Node e quatro Chromium (7,83 s). Ambos exercitaram a stack de desenvolvimento do zero com bootstrap e identidade DML, sem credenciais externas.
