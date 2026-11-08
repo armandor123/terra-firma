@@ -23,6 +23,7 @@ from PIL import Image, UnidentifiedImageError
 from pwdlib import PasswordHash
 from .db import connect, database_url
 from .storage import PhotoStore
+from .limits import consume, reset
 from .schemas import Login, Password, Farmer, Property, Incident, Review, Refresh, IncidentDetail
 from .vision import VisionProvider, get_vision_provider
 from .evidence import EvidenceSettings, EnvironmentClient, build_evidence
@@ -67,7 +68,6 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
     environment_client = EnvironmentClient(data_url, data_key, evidence_config, data_transport)
     app = FastAPI(title='Terra-Firma — Backend',version='2.1.0')
     dummy_hash = passwords.hash(secrets.token_urlsafe(24))
-    login_attempts = {}
 
     @app.middleware('http')
     async def body_limit(request, call_next):
@@ -93,6 +93,7 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
                 WHERE s.token_hash=%s AND s.expires>%s''',(digest(credentials.credentials),time.time())).fetchone()
         if not row:
             raise HTTPException(401,'Sessão inválida ou expirada')
+        consume(db_url,'api',row['id'],120)
         return dict(row)
 
     def ready(user=Depends(current)):
@@ -137,21 +138,14 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
 
     @app.post('/v1/auth/login')
     def login(body: Login):
-        t = time.monotonic()
-        key = body.username
-        attempts = [x for x in login_attempts.get(key,[]) if t-x<60]
-        if len(attempts)>=5:
-            raise HTTPException(429,'Aguarde um minuto antes de tentar novamente')
-        if len(login_attempts)>10000:
-            login_attempts.clear()
-        login_attempts[key] = attempts+[t]
+        consume(db_url,'login',body.username,5)
         with connect(db_url) as db:
             row = db.execute('SELECT * FROM users WHERE username=%s FOR UPDATE',(body.username,)).fetchone()
             valid = passwords.verify(body.password,row['password_hash'] if row else dummy_hash)
             if not row or not valid:
                 raise HTTPException(401,'Usuário ou senha incorretos')
             tokens = issue_session(db,row['id'])
-        login_attempts.pop(key,None)
+        reset(db_url,'login',body.username)
         return {**tokens,'role':row['role'],'must_change_password':bool(row['must_change'])}
 
     def issue_session(db,user_id):
@@ -171,6 +165,7 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
                 UNION SELECT s.user_id,s.id FROM sessions s JOIN refresh_history h ON h.session_id=s.id
                 WHERE h.token_hash=%s""",(hashed,hashed)).fetchone()
             if candidate:
+                consume(db_url,'refresh',candidate['user_id'],30)
                 # Ordem de locks: usuário, depois sessão; igual à troca de senha/login.
                 db.execute('SELECT id FROM users WHERE id=%s FOR UPDATE',(candidate['user_id'],))
                 session=db.execute('SELECT * FROM sessions WHERE id=%s FOR UPDATE',(candidate['id'],)).fetchone()
@@ -296,6 +291,7 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
                 if existing['request_hash']!=fingerprint:
                     raise HTTPException(409,'client_request_id já utilizado com outro conteúdo')
                 return {'id':existing['id'],'replayed':True}
+            consume(db_url,'upload',user['id'],20)
             incident_id=uid()
             photo_key=store.put(image)
             # Após autorização e deduplicação; somente JPEG reencodificado sem EXIF.
