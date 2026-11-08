@@ -4,7 +4,7 @@
 
 Implementados `VisionProvider`, `SimulatedProvider`, `GeminiProvider`, seleção por ambiente e contrato Pydantic. O upload agora usa o provedor selecionado e persiste sua saída em `incidents.ai_json`; detalhes e listagem continuam sujeitos à autorização existente. A IA não altera `incidents.status`, que nasce `submitted` e depende da revisão da cooperativa.
 
-**Nenhuma chamada Gemini real foi executada nesta entrega: não havia chave/modelo configurados.** Os testes HTTP controlados verificam protocolo, validações e comportamento de falha; não comprovam execução no serviço externo nem qualidade visual. Não há métricas de acurácia ou modelo específico aprovado para uso.
+**Chamada Gemini real executada com sucesso em 07/11/2026, 21:47 (São Paulo), usando `gemini-3.8-flash` e imagem sintética uniforme criada em memória.** HTTP 200, resposta Pydantic aceita, `completed`, `simulated=false`, `inconclusive`, quatro sinais incertos e revisão obrigatória. [Evidência sem credencial](vision-live-check.json). A chave fornecida pelo usuário foi usada apenas em memória; o modo padrão do servidor permanece simulado. Isso não aprova modelo para uso operacional nem mede acurácia. Testes HTTP controlados continuam separados desta chamada externa.
 
 ## Configuração
 
@@ -52,7 +52,7 @@ Teste local: 49 aprovados, 16 ignorados por falta de banco, 1 aviso; 65 coletado
 
 O prompt instrui a ignorar comandos dentro da imagem; os testes verificam instrução e rejeição de campos indevidos, sem medir resistência adversarial do modelo real. Textos gerados pelo modelo devem ser apresentados como texto não confiável, nunca HTML executável.
 
-Para afirmar integração externa validada: configurar conta/modelo compatível, usar imagem autorizada, executar um relato real, confirmar `completed/simulated=false`, versão devolvida pela API e persistência, e registrar evidência sem imagem privada/chave. Isso não comprova qualidade. Avaliação independente rotulada continua necessária para publicar métricas.
+O adaptador/API foi verificado com uma imagem sintética; falta validar o fluxo completo com foto autorizada e ocorrência real persistida, confirmar versão/status e registrar evidência sem credencial ou imagem privada. A tentativa anterior com gemini-2.5-flash retornou 404; o operador escolheu explicitamente gemini-3.8-flash após conferir sua disponibilidade. Isso não cria fallback automático no código e não comprova qualidade. Avaliação independente rotulada continua necessária para publicar métricas.
 
 Não há cruzamento automático com FIRMS/clima, snapshot ambiental, worker, índice de risco ou confirmação de incêndio pela IA. Clima/focos continuam consultados separadamente por propriedade.
 

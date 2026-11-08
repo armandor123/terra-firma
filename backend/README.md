@@ -71,7 +71,7 @@ Execute esse comando na raiz. Cada cenário cria/remove somente seu próprio sch
 
 ## Visão — Fase 2
 
-O upload seleciona `VisionProvider` por `VISION_MODE=simulated|gemini`. O padrão é simulado. Gemini exige `GEMINI_API_KEY` e `GEMINI_MODEL` somente no servidor; sem ambos, o modo gemini não inicializa. O JPEG reencodificado sem EXIF é enviado após autorização/deduplicação; a saída Pydantic é salva em `ai_json`, sem modificar o status de revisão humana. Não há chamada Gemini real validada nesta entrega nem avaliação de qualidade.
+O upload seleciona `VisionProvider` por `VISION_MODE=simulated|gemini`. O padrão é simulado. Gemini exige `GEMINI_API_KEY` e `GEMINI_MODEL` somente no servidor; sem ambos, o modo gemini não inicializa. O JPEG reencodificado sem EXIF é enviado após autorização/deduplicação; a saída Pydantic é salva em `ai_json`, sem modificar o status de revisão humana. Uma chamada Gemini real com imagem sintética foi validada; não houve avaliação de qualidade nem ocorrência real persistida de ponta a ponta. Veja a evidência em docs/vision-live-check.json.
 
 Veja [`docs/VISAO.md`](../docs/VISAO.md) para contrato, campos de confiança, instruções de configuração, comportamento indisponível/inconclusivo e limitações da chamada síncrona. O schema está em [`vision-result.schema.json`](vision-result.schema.json). Credenciais não devem ir ao app. `DATA_MODE` não seleciona visão. Não há fila/worker/reanálise ou cruzamento ambiental automático.
 

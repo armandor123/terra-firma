@@ -55,3 +55,10 @@ Texto proposto para substituir a descrição centrada em um aplicativo mobile. R
 - Manter o cruzamento FIRMS/Open-Meteo pendente. Nenhum resultado de teste com transporte controlado deve ser apresentado como prova de inferência ou acurácia real. Detalhes e evidências em `VISAO.md`/`VALIDACAO.md`.
 
 - Evidência remota da Fase 2: [CI 42429976440](https://github.com/armandor123/terra-firma/actions/runs/42429976440), SHA `01ae50dab2e1649a0317bc1069e12b6558c3c6ec`: 65 aprovados, nenhum ignorado, 1 aviso em 10,57 s. Isso valida regressão técnica com PostGIS e HTTP controlado, sem comprovar inferência Gemini real ou qualidade visual.
+
+## 07/11/2026 — Verificação externa com chave autorizada
+
+- Usar a chave fornecida somente em memória no processo de verificação, sem salvar em .env, CI, commits ou evidência. Manter o padrão simulado; não alterar configuração de produção ou permissões da conta.
+- Usar uma imagem sintética uniforme própria para testar o protocolo sem enviar fotos privadas de terceiros. Não tratar o teste como avaliação de detecção de fogo.
+- Metadados listaram gemini-2.5-flash, mas a geração retornou 404. Escolher explicitamente gemini-3.8-flash, também listado e descrito na documentação atual, para uma segunda tentativa manual: sucesso HTTP 200 e saída Pydantic válida/inconclusiva. Não implementar fallback/retry automático nem afirmar que a listagem garante geração para qualquer modelo.
+- Registrar apenas evidências sanitizadas e tempos observados. Uma chamada não mede acurácia/calibração e não valida persistência de ocorrência real de ponta a ponta. Testes controlados e externos permanecem separados.

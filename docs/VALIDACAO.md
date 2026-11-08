@@ -1,5 +1,18 @@
 # Validação — versão 2, PostgreSQL/mobile
 
+## Verificação externa Gemini — 07/11/2026, 21:47 (São Paulo)
+
+Após autorização e fornecimento da chave pelo usuário, foram feitas consultas de metadados e duas tentativas explícitas de geração, sem salvar a credencial no código, arquivos de configuração, CI ou commits. A listagem de modelos retornou HTTP 200. GeminiProvider foi executado sem alterar o código, usando transporte HTTP real (não MockTransport), na revisão `6af2197905b16bab8ba03fe2665872c3d24ce1b9`.
+
+| Tentativa | Modelo solicitado | Resultado observado |
+|---|---|---|
+| 1 | gemini-2.5-flash | HTTP 404 NOT_FOUND; adaptador retornou unavailable/inconclusive, simulated=false |
+| 2 | gemini-3.8-flash | Metadados HTTP 200 com generateContent listado; geração HTTP 200, finishReason=STOP; completed, simulated=false, classificação inconclusive; 11,121 s nesta única chamada |
+
+A entrada era uma imagem sintética uniforme 256×256 RGB (40,100,50), criada em memória, reencodificada pelo clean_image em JPEG sem EXIF (1.653 bytes). Não era foto de floresta, vegetação seca ou fogo. Os quatro sinais retornaram uncertain/confidence=null, image_assessable=false e limitação other. A versão de modelo devolvida pela API foi gemini-3.8-flash e a versão do prompt terra-firma-vision-v1; a revisão humana continuou obrigatória. JSON integral sanitizado, hash da imagem e limites em [vision-live-check.json](vision-live-check.json).
+
+Isso comprova execução externa e aceitação do contrato para um exemplo sintético. **Não comprova detecção de incêndio, acurácia, calibração, desempenho geral, custo ou persistência de uma ocorrência real de ponta a ponta.** Persistência/autorização continuam cobertas pelo CI com transporte controlado; ainda falta combinar foto real autorizada, chamada externa e registro no banco na mesma execução. A troca manual de modelo entre tentativas não adiciona retry/fallback ao código. O padrão VISION_MODE=simulated não foi alterado.
+
 ## Fase 2 — visão: implementação e CI confirmado
 
 Base: branch publicada `chore/fase-1`, SHA `a796bb5c6155352a8fd821dc998c05be85386b55`. Antes de continuar, conferidos os itens da Fase 1: README PT-BR/links corretos, log fora do índice e ignorado, integração em `tests/`, configuração CI com PostGIS e execução final bem-sucedida, licença apenas proposta e About apenas sugerido. [CI final da Fase 1](https://github.com/armandor123/terra-firma/actions/runs/42428636894): 24 aprovados, 1 aviso em 8,38 s, nenhum ignorado. A `main` continua sem merge.
@@ -16,7 +29,7 @@ Resultado remoto confirmado em 07/11/2026, 21:30 (São Paulo): **65 passed, 1 wa
 
 Publicados três commits lógicos (contrato/adaptadores, integração, documentação), preservando `main`. Árvores Git publicadas foram comparadas com as locais; os SHAs de commits mudaram por publicação via API, sem mudar conteúdo. Alteração documental posterior registra este resultado sem alterar o código testado.
 
-**Não executado:** chamada real Gemini, inferência em foto autorizada, avaliação independente de qualidade, medição de acurácia/latência/custo do fornecedor, adversarial real ou cruzamento ambiental. Não havia chave/modelo configurados. Os 38 testes do adaptador/contrato não são 38 avaliações de fotos. Código/configuração disponível não equivale a integração externa comprovada.
+**Não executado na verificação inicial:** chamada real Gemini, inferência em foto autorizada, avaliação independente de qualidade, medição de acurácia/latência/custo do fornecedor, adversarial real ou cruzamento ambiental. Naquele momento não havia chave/modelo; a evidência externa posterior está registrada no início deste documento. Os 38 testes do adaptador/contrato não são 38 avaliações de fotos. Código/configuração disponível não equivale a integração externa comprovada.
 
 ## Execução remota confirmada — 07/11/2026, 21:09 (São Paulo)
 

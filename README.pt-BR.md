@@ -1,6 +1,6 @@
 # Terra-Firma
 
-**MVP de relatos com fotos por agricultores e revisão por cooperativas, com conectores ambientais e adaptador Gemini selecionável. Validação real da visão e cruzamento automático com satélite/clima permanecem pendentes.**
+**MVP de relatos com fotos por agricultores e revisão por cooperativas, com conectores ambientais e adaptador Gemini selecionável. Avaliação em fotos reais e cruzamento automático com satélite/clima permanecem pendentes.**
 
 [English](README.md) · **Português (Brasil)** · [Repositório](https://github.com/armandor123/terra-firma)
 
@@ -8,13 +8,13 @@ Projeto do **Grupo 13**, desenvolvido para o desafio **Reboot the Earth 2026**. 
 
 A ideia central é permitir que **a IA analise fotos enviadas pelo produtor para identificar indícios de focos de incêndio, fumaça, mata seca e vegetação queimada**, cruzando essas evidências com **focos de calor de satélite e dados meteorológicos**. A cooperativa recebe informações organizadas para revisar ocorrências e coordenar encaminhamentos.
 
-> **Estado do projeto:** MVP em desenvolvimento. O backend oficial e o serviço de dados ambientais estão descritos nos READMEs técnicos anteriores. A apresentação propõe interface web em HTML/CSS/JavaScript e um processador de análise com Google Gemini. **A Fase 2 implementa visão simulada/Gemini selecionável e resultado estruturado validado. O padrão continua simulado; ainda não houve chamada real Gemini nem avaliação de qualidade visual. O cruzamento automático ambiental não está implementado.** O índice de risco também não é calculado. O histórico contém um cliente Expo de referência para possível integração mobile.
+> **Estado do projeto:** MVP em desenvolvimento. O backend oficial e o serviço de dados ambientais estão descritos nos READMEs técnicos anteriores. A apresentação propõe interface web em HTML/CSS/JavaScript e um processador de análise com Google Gemini. **A Fase 2 implementa visão simulada/Gemini selecionável e resultado estruturado validado. O padrão continua simulado. Uma chamada Gemini real com imagem sintética funcionou; a qualidade visual continua sem avaliação. O cruzamento automático ambiental não está implementado.** O índice de risco também não é calculado. O histórico contém um cliente Expo de referência para possível integração mobile.
 
 > **Auditoria da Fase 0 — 07/11/2026:** Código inspecionado em `1825555f9a714ffab131a3e7796f4223bb753944`. A suíte local retornou **11 aprovados, 13 ignorados e 1 aviso**. Os dois comandos Compose foram tentados, mas Docker não está disponível; os cenários PostgreSQL/PostGIS continuam sem execução nesta auditoria. **Fase 0 bloqueada até a validação integral do ambiente e do banco.** Veja [auditoria e evidências](docs/AUDITORIA.md) e [decisões](docs/DECISOES.md). Nenhum código de aplicação foi alterado.
 
 > **Atualização de CI — 07/11/2026:** [Suíte completa com PostGIS aprovada](https://github.com/armandor123/terra-firma/actions/runs/42428442702): **24 testes aprovados, nenhum ignorado**, com um aviso de depreciação do TestClient. Mudanças publicadas em `chore/fase-1`; inicialização do ambiente de desenvolvimento ainda não verificada. Naquela revisão a IA era simulada. A Fase 2 adiciona visão Gemini selecionável; o cruzamento automático continua não implementado.
 
-> **Fase 2:** `VisionProvider`, adaptadores simulated/Gemini e saída validada por sinal estão implementados no envio. [CI aprovou os 65 testes](https://github.com/armandor123/terra-firma/actions/runs/42429976440). O padrão continua simulado. Chamada Gemini real e avaliação da qualidade visual ainda não validadas; nenhuma acurácia é alegada.
+> **Fase 2:** `VisionProvider`, adaptadores simulated/Gemini e saída validada por sinal estão implementados no envio. [CI aprovou os 65 testes](https://github.com/armandor123/terra-firma/actions/runs/42429976440). O padrão continua simulado. Chamada Gemini real validada com imagem sintética; qualidade em fotos reais não avaliada e nenhuma acurácia alegada.
 
 ## Sumário
 
@@ -70,7 +70,7 @@ O cruzamento pretendido verifica se há focos de calor próximos e temporalmente
 4. O processador cruza os indícios com focos de calor próximos e informações meteorológicas, preservando origem e horário dos dados.
 5. A cooperativa realiza a revisão humana e registra o encaminhamento da ocorrência.
 
-O passo 3 tem implementação configurável, testada com HTTP controlado; a validação Gemini real está pendente. O passo 4 continua futuro: o serviço ambiental fornece contexto separadamente. A plataforma apoia decisões e não substitui serviços de emergência ou alertas oficiais. O MVP não envia comunicações automaticamente às autoridades.
+O passo 3 tem implementação configurável, testada com HTTP controlado; uma chamada real com imagem sintética já passou, mas a validação com fotos reais continua pendente. O passo 4 continua futuro: o serviço ambiental fornece contexto separadamente. A plataforma apoia decisões e não substitui serviços de emergência ou alertas oficiais. O MVP não envia comunicações automaticamente às autoridades.
 
 O combate ao desmatamento é a finalidade do projeto. O escopo atual não inclui detecção geral de corte de árvores, medição de desmatamento ou cálculo de hectares queimados por fotografia.
 
@@ -90,7 +90,7 @@ Os estados abaixo foram conferidos contra o código na Fase 0. Os 13 cenários d
 | Histórico e revisão | Consulta paginada e histórico de alterações de status |
 | Relatórios | Resumo acumulado; filtros por período e exportações pendentes |
 | Meteorologia e satélite | Conectores Open-Meteo e NASA FIRMS; modo demo explícito |
-| IA de imagens | VisionProvider com implementações simulated/Gemini; validação Gemini real pendente |
+| IA de imagens | VisionProvider com implementações simulated/Gemini; chamada real sintética validada; avaliação em fotos reais pendente |
 | Fogo, fumaça, mata seca e vegetação queimada | Saída estruturada por sinal implementada; qualidade não medida em fotos reais |
 | Cruzamento automático entre imagem, satélite e clima | Proposto; não implementado no fluxo atual |
 | Interface web HTML/CSS/JavaScript | Proposta; sem implementação no checkout auditado |
@@ -126,7 +126,7 @@ flowchart TD
 | Referência mobile | React Native, Expo e TypeScript; cliente de integração anterior, sem aplicativo completo |
 | Execução e testes | Docker Compose e pytest |
 
-O diagrama acima resume os serviços documentados e o acesso previsto pela interface. Na arquitetura de evolução, o worker acessará as fotos privadas, consultará o Gemini e a API de dados e persistirá os resultados para revisão humana. Fila persistente e worker continuam propostos. A Fase 2 implementa Gemini diretamente no backend; ainda não validado com chave real.
+O diagrama acima resume os serviços documentados e o acesso previsto pela interface. Na arquitetura de evolução, o worker acessará as fotos privadas, consultará o Gemini e a API de dados e persistirá os resultados para revisão humana. Fila persistente e worker continuam propostos. A Fase 2 implementa Gemini diretamente no backend; chamada API real com imagem sintética validada. Veja [evidência](docs/vision-live-check.json).
 
 A interface acessa o backend. O backend autoriza o acesso à propriedade e consulta o serviço de dados usando uma chave interna. As credenciais dos serviços não devem ser distribuídas no aplicativo.
 
@@ -405,7 +405,7 @@ Consulte os termos, cotas e atribuições dos provedores antes de publicar o ser
 
 ### Implementação da Fase 2 e limites da validação
 
-`VisionProvider` define `analyze(image: bytes) -> VisionResult`. `SimulatedProvider` retorna sinais desconhecidos e resultado inconclusivo; `GeminiProvider` envia o JPEG limpo à API `generateContent` do Google e valida a resposta estruturada com Pydantic. Ambos estão ligados ao envio de ocorrência. **A execução Gemini real não foi validada nesta entrega: não havia chave nem modelo configurados. Testes com HTTP controlado não medem qualidade visual.**
+`VisionProvider` define `analyze(image: bytes) -> VisionResult`. `SimulatedProvider` retorna sinais desconhecidos e resultado inconclusivo; `GeminiProvider` envia o JPEG limpo à API `generateContent` do Google e valida a resposta estruturada com Pydantic. Ambos estão ligados ao envio de ocorrência. **Uma chamada real com `gemini-3.8-flash` funcionou usando imagem sintética uniforme: HTTP 200, `status=completed`, `simulated=false`, `classification=inconclusive`. [Evidência](docs/vision-live-check.json). Isso valida o contrato adaptador/API em um exemplo, não a qualidade de detecção nem uma ocorrência real persistida de ponta a ponta. A credencial foi usada apenas em memória, sem salvamento.**
 
 | VISION_MODE / resultado | Resultado armazenado |
 |---|---|
@@ -441,7 +441,7 @@ Autorização e idempotência são verificadas antes do modelo. Só são enviado
 
 O processamento é síncrono na requisição/transação atual, com timeout HTTP de 20 segundos por operação (conexão: 5 segundos), uma tentativa e nenhum retry automático. Isso acrescenta latência e mantém o lock do banco. Falha do processo após consultar o provedor e antes do commit pode gerar outra chamada cobrada no reenvio; não existe garantia de execução externa exatamente uma vez nem fila durável. O prompt trata texto na foto como conteúdo não confiável; é uma precaução, não uma garantia medida contra injeção de instruções.
 
-O upload ainda não chama o serviço ambiental. `GET /v1/properties/{id}/environment` consulta o contexto da propriedade separadamente. Snapshot ambiental, horário de captura, cruzamento imagem × FIRMS × clima e índice de risco continuam ausentes. Foto isolada não comprova localização, umidade ou hectares queimados. Ausência de sinais/focos não comprova segurança. Próximos passos: validação real autorizada, avaliação independente com imagens rotuladas e depois worker/cruzamento planejados. Nenhuma métrica de acurácia de IA foi medida.
+O upload ainda não chama o serviço ambiental. `GET /v1/properties/{id}/environment` consulta o contexto da propriedade separadamente. Snapshot ambiental, horário de captura, cruzamento imagem × FIRMS × clima e índice de risco continuam ausentes. Foto isolada não comprova localização, umidade ou hectares queimados. Ausência de sinais/focos não comprova segurança. Próximos passos: validação autorizada com fotos reais/de ponta a ponta, avaliação independente com imagens rotuladas e depois worker/cruzamento planejados. Nenhuma métrica de acurácia de IA foi medida.
 
 ## Persistência e operação
 

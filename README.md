@@ -1,7 +1,7 @@
 
 # Terra-Firma
 
-**An MVP for farmer photo reports and cooperative review, with environmental connectors and a selectable Gemini vision adapter. Live vision validation and automatic satellite/weather cross-referencing remain pending.**
+**An MVP for farmer photo reports and cooperative review, with environmental connectors and a selectable Gemini vision adapter. Real-photo evaluation and automatic satellite/weather cross-referencing remain pending.**
 
 **English** · [Português (Brasil)](README.pt-BR.md) · [Repository](https://github.com/armandor123/terra-firma)
 
@@ -9,13 +9,13 @@ A **Group 13** project developed for **Reboot the Earth 2026**. Terra-Firma aims
 
 The central idea is for **AI to analyze photographs submitted by farmers for signs of fire, smoke, dry vegetation and burned vegetation**, then cross-reference those findings with **satellite thermal hotspots and weather data**. Cooperatives receive organized evidence to review incidents and coordinate follow-up.
 
-> **Project status:** MVP under development. The previous technical READMEs describe the official backend and environmental data service. The presentation proposes an HTML/CSS/JavaScript web interface and an analysis worker using Google Gemini. **Phase 2 implements selectable simulated/Gemini vision and a validated structured result. Default mode remains simulated; no live Gemini call or visual-quality evaluation has been completed. Automatic environmental cross-referencing is not implemented.** A wildfire risk index is not calculated. Earlier work includes an Expo reference client for potential mobile integration.
+> **Project status:** MVP under development. The previous technical READMEs describe the official backend and environmental data service. The presentation proposes an HTML/CSS/JavaScript web interface and an analysis worker using Google Gemini. **Phase 2 implements selectable simulated/Gemini vision and a validated structured result. Default mode remains simulated. A live Gemini call with a synthetic fixture has succeeded; visual quality remains unevaluated. Automatic environmental cross-referencing is not implemented.** A wildfire risk index is not calculated. Earlier work includes an Expo reference client for potential mobile integration.
 
 > **Phase 0 audit — November 7, 2026:** Source inspected at `1825555f9a714ffab131a3e7796f4223bb753944`. The local suite returned **11 passed, 13 skipped, 1 warning**. Both Compose commands were attempted but Docker is unavailable; PostgreSQL/PostGIS scenarios remain unexecuted in this audit. **Phase 0 is blocked pending full environment and database validation.** See [audit and evidence](docs/AUDITORIA.md) and [decisions](docs/DECISOES.md). No application code changed.
 
 > **CI update — November 7, 2026:** [Full PostGIS suite passed](https://github.com/armandor123/terra-firma/actions/runs/42428442702): **24 tests passed, none skipped**, with one TestClient deprecation warning. Changes are published on `chore/fase-1`; development-stack startup remains unverified. At that revision AI was simulated. Phase 2 now adds selectable Gemini vision; automatic evidence cross-referencing remains unimplemented.
 
-> **Phase 2:** `VisionProvider`, simulated/Gemini adapters and validated per-signal output are implemented in the upload flow. [CI passed all 65 tests](https://github.com/armandor123/terra-firma/actions/runs/42429976440). Default remains simulated. A live Gemini call and image-quality evaluation remain unvalidated; no accuracy claim is made.
+> **Phase 2:** `VisionProvider`, simulated/Gemini adapters and validated per-signal output are implemented in the upload flow. [CI passed all 65 tests](https://github.com/armandor123/terra-firma/actions/runs/42429976440). Default remains simulated. A live Gemini call with a synthetic fixture passed; real-photo quality remains unevaluated and no accuracy claim is made.
 
 ## Contents
 
@@ -71,7 +71,7 @@ The proposed cross-referencing checks for nearby hotspots with observation times
 4. The processor cross-references the findings with nearby thermal hotspots and weather information, retaining source and observation times.
 5. The cooperative performs human review and records the incident follow-up.
 
-Step 3 has a configurable implementation, tested with controlled HTTP responses; live Gemini validation is pending. Step 4 remains future work: the environmental service supplies context separately. The platform supports decisions and does not replace emergency services or official warnings. The MVP does not automatically send communications to authorities.
+Step 3 has a configurable implementation, tested with controlled HTTP responses; a live synthetic-fixture call has now passed, while real-photo validation remains pending. Step 4 remains future work: the environmental service supplies context separately. The platform supports decisions and does not replace emergency services or official warnings. The MVP does not automatically send communications to authorities.
 
 Combating deforestation is the project's purpose. Current scope does not include general tree-clearing detection, deforestation measurement or calculating burned hectares from photographs.
 
@@ -91,7 +91,7 @@ The statuses below were checked against source code during Phase 0. The 13 Postg
 | Incident history and review | Paginated queries and status-change history |
 | Reports | Cumulative summary; period filters and exports pending |
 | Weather and satellite data | Open-Meteo and NASA FIRMS connectors; explicit demo mode |
-| Image AI | VisionProvider with simulated/Gemini implementations; live Gemini validation pending |
+| Image AI | VisionProvider with simulated/Gemini implementations; live synthetic-fixture call validated; real-photo evaluation pending |
 | Fire, smoke, dry vegetation and burned vegetation | Structured per-signal output implemented; quality not measured on real photos |
 | Automatic image/satellite/weather cross-referencing | Proposed; not implemented in the current flow |
 | HTML/CSS/JavaScript web interface | Proposed; no implementation in the audited checkout |
@@ -127,7 +127,7 @@ flowchart TD
 | Mobile reference | React Native, Expo and TypeScript; earlier integration client, without a complete application |
 | Runtime and tests | Docker Compose and pytest |
 
-The diagram above summarizes the documented services and intended interface access. In the target architecture, the worker will read private photos, query Gemini and the data API, and persist results for human review. The persistent queue and worker remain proposed. Phase 2 implements Gemini directly in the backend; it has not been validated with a live API key.
+The diagram above summarizes the documented services and intended interface access. In the target architecture, the worker will read private photos, query Gemini and the data API, and persist results for human review. The persistent queue and worker remain proposed. Phase 2 implements Gemini directly in the backend; a live API call with a synthetic fixture has succeeded. See [evidence](docs/vision-live-check.json).
 
 The interface calls the backend. The backend authorizes property access and calls the data service using an internal key. Service credentials must not be distributed in the application.
 
@@ -406,7 +406,7 @@ Check provider terms, quotas and attribution requirements before publishing the 
 
 ### Phase 2 implementation and validation limits
 
-`VisionProvider` defines `analyze(image: bytes) -> VisionResult`. `SimulatedProvider` returns unknown signals and an inconclusive result; `GeminiProvider` sends the cleaned JPEG to Google's `generateContent` API and validates the structured response with Pydantic. Both are wired into incident submission. **Live Gemini execution has not been validated in this delivery: no API key or model was configured. Controlled HTTP tests do not measure visual quality.**
+`VisionProvider` defines `analyze(image: bytes) -> VisionResult`. `SimulatedProvider` returns unknown signals and an inconclusive result; `GeminiProvider` sends the cleaned JPEG to Google's `generateContent` API and validates the structured response with Pydantic. Both are wired into incident submission. **A live call with `gemini-3.8-flash` succeeded using a synthetic uniform image: HTTP 200, `status=completed`, `simulated=false`, `classification=inconclusive`. [Evidence](docs/vision-live-check.json). This validates the adapter/API contract on one fixture, not fire detection quality or a real incident persisted end to end. The credential was used only in memory and was not saved.**
 
 | VISION_MODE / outcome | Stored result |
 |---|---|
@@ -442,7 +442,7 @@ Authorization and idempotency checks run before the model. Only the reencoded JP
 
 Processing is synchronous in the current request/transaction, with HTTP timeouts of 20 seconds per operation (connect: 5 seconds), one attempt and no automatic retry. This adds latency and holds the database lock. A crash after a provider call but before database commit can lead to another billable call on retry; there is no exactly-once external execution guarantee or durable queue. The prompt treats image text as untrusted content; this is a precaution, not a measured prompt-injection guarantee.
 
-Incident upload still does not call the environmental service. `GET /v1/properties/{id}/environment` queries property context separately. Environmental snapshots, photo capture time, image × FIRMS × weather correlation and a risk index remain absent. A single photo cannot establish location, moisture or burned hectares. Lack of signs/hotspots does not establish safety. Next steps are authorized live validation, independent labeled-image evaluation and then the planned worker/correlation work. No AI accuracy metric has been measured.
+Incident upload still does not call the environmental service. `GET /v1/properties/{id}/environment` queries property context separately. Environmental snapshots, photo capture time, image × FIRMS × weather correlation and a risk index remain absent. A single photo cannot establish location, moisture or burned hectares. Lack of signs/hotspots does not establish safety. Next steps are authorized real-photo/end-to-end validation, independent labeled-image evaluation and then the planned worker/correlation work. No AI accuracy metric has been measured.
 
 ## Persistence and operations
 

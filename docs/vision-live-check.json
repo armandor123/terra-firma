@@ -1,0 +1,67 @@
+{
+  "checked_at": "2026-11-08T00:47:36.773889+00:00",
+  "tested_commit": "6af2197905b16bab8ba03fe2665872c3d24ce1b9",
+  "input": "Synthetic uniform 256x256 RGB (40,100,50), generated in memory; not a landscape or fire photograph.",
+  "input_sha256": "73008425fd7fbceac9e93c78e7f496f98131bfbedcd4cb5fdda805b682363987",
+  "image_bytes": 1653,
+  "model_listing_http_status": 200,
+  "attempts": [
+    {
+      "model": "gemini-2.5-flash",
+      "http_status": 404,
+      "api_status": "NOT_FOUND",
+      "result_status": "unavailable",
+      "elapsed_seconds": 6.863
+    },
+    {
+      "model": "gemini-3.8-flash",
+      "http_status": 200,
+      "finish_reasons": [
+        "STOP"
+      ],
+      "elapsed_seconds": 11.121
+    }
+  ],
+  "result": {
+    "signals": {
+      "fire": {
+        "presence": "uncertain",
+        "confidence": null,
+        "justification": "Imagem totalmente sólida sem conteúdo visual observável."
+      },
+      "smoke": {
+        "presence": "uncertain",
+        "confidence": null,
+        "justification": "Imagem totalmente sólida sem conteúdo visual observável."
+      },
+      "dry_vegetation": {
+        "presence": "uncertain",
+        "confidence": null,
+        "justification": "Imagem totalmente sólida sem conteúdo visual observável."
+      },
+      "burned_vegetation": {
+        "presence": "uncertain",
+        "confidence": null,
+        "justification": "Imagem totalmente sólida sem conteúdo visual observável."
+      }
+    },
+    "image_assessable": false,
+    "limitations": [
+      "other"
+    ],
+    "classification": "inconclusive",
+    "schema_version": "1.0",
+    "status": "completed",
+    "provider": "gemini",
+    "simulated": false,
+    "requested_model": "gemini-3.8-flash",
+    "model_version": "gemini-3.8-flash",
+    "prompt_version": "terra-firma-vision-v1",
+    "human_review_required": true,
+    "confidence": null,
+    "error_code": null,
+    "warning": "Indícios visuais automáticos não confirmam incêndio; revisão humana obrigatória. Confiança declarada pelo modelo não é acurácia medida."
+  },
+  "validation_scope": "Actual GeminiProvider call through a real HTTP transport with an in-memory synthetic fixture. Pydantic result validated. Not an end-to-end incident persisted in PostgreSQL.",
+  "limits": "No real landscape/fire photograph, labels, accuracy assessment or general latency/cost claim. Runtime still defaults to simulated; no credential saved."
+}
