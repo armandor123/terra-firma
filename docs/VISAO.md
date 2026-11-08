@@ -48,7 +48,7 @@ O adaptador é **síncrono**: mantém a transação/lock durante HTTP. Timeout p
 
 ## Validação e pendências
 
-Teste local: 49 aprovados, 16 ignorados por falta de banco, 1 aviso; 65 coletados. CI com PostGIS deve executar todos antes de aprovar esta revisão; resultado atual em [`VALIDACAO.md`](VALIDACAO.md). Inclui testes de quatro sinais/seis classes, limites, configuração, HTTP/timeout/bloqueio/JSON/versão, persistência e fluxo de revisão, foto sem EXIF, autorização e reenvios simultâneos sem nova chamada.
+Teste local: 49 aprovados, 16 ignorados por falta de banco, 1 aviso; 65 coletados. [CI com PostGIS](https://github.com/armandor123/terra-firma/actions/runs/42429976440) executou todos: **65 aprovados, nenhum ignorado, 1 aviso em 10,57 s**. Evidência de commit/ambiente em [`VALIDACAO.md`](VALIDACAO.md). Inclui testes de quatro sinais/seis classes, limites, configuração, HTTP/timeout/bloqueio/JSON/versão, persistência e fluxo de revisão, foto sem EXIF, autorização e reenvios simultâneos sem nova chamada.
 
 O prompt instrui a ignorar comandos dentro da imagem; os testes verificam instrução e rejeição de campos indevidos, sem medir resistência adversarial do modelo real. Textos gerados pelo modelo devem ser apresentados como texto não confiável, nunca HTML executável.
 

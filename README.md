@@ -15,6 +15,8 @@ The central idea is for **AI to analyze photographs submitted by farmers for sig
 
 > **CI update — November 7, 2026:** [Full PostGIS suite passed](https://github.com/armandor123/terra-firma/actions/runs/42428442702): **24 tests passed, none skipped**, with one TestClient deprecation warning. Changes are published on `chore/fase-1`; development-stack startup remains unverified. At that revision AI was simulated. Phase 2 now adds selectable Gemini vision; automatic evidence cross-referencing remains unimplemented.
 
+> **Phase 2:** `VisionProvider`, simulated/Gemini adapters and validated per-signal output are implemented in the upload flow. [CI passed all 65 tests](https://github.com/armandor123/terra-firma/actions/runs/42429976440). Default remains simulated. A live Gemini call and image-quality evaluation remain unvalidated; no accuracy claim is made.
+
 ## Contents
 
 - [Overview](#overview)
@@ -472,9 +474,9 @@ Never include `DATA_API_KEY`, `FIRMS_MAP_KEY`, `GEMINI_API_KEY` or `DATABASE_URL
 
 ## Testing and validation
 
-Phase 2 local verification: **49 passed, 16 skipped, 1 warning in 1.15s**; 65 tests collected. Database scenarios await the Phase 2 CI run. Gemini tests use controlled HTTP responses, without real inference or quality metrics.
+**Phase 2 CI: 65 passed, none skipped, 1 warning in 10.57s**, with PostgreSQL/PostGIS. [Run and logs](https://github.com/armandor123/terra-firma/actions/runs/42429976440), tested commit `01ae50dab2e1649a0317bc1069e12b6558c3c6ec`. Local verification had 49 passed/16 skipped without a database; all 16 were subsequently exercised in CI. Gemini tests use controlled HTTP responses, without real inference or quality metrics.
 
-GitHub Actions is configured in [`.github/workflows/tests.yml`](.github/workflows/tests.yml) for pushes, pull requests and manual runs. It uses the isolated `compose.test.yaml` database (`postgis/postgis:16-3.7`), waits for its healthcheck, builds the test image and runs the entire suite. The test service exit code determines the job result; failure diagnostics and container cleanup are configured. No provider credentials are required. **CI passed on November 7, 2026 (São Paulo): 24 passed, no skipped tests, 1 warning in 6.49s.** [Run and logs](https://github.com/armandor123/terra-firma/actions/runs/42428442702), tested commit `4eb09cc86ed3101e1335f180fb84a6439270c714`. All PostgreSQL-dependent scenarios ran against the isolated PostGIS database. The development Compose stack and live providers were not exercised by this workflow.
+GitHub Actions is configured in [`.github/workflows/tests.yml`](.github/workflows/tests.yml) for pushes, pull requests and manual runs. It uses the isolated `compose.test.yaml` database (`postgis/postgis:16-3.7`), waits for its healthcheck, builds the test image and runs the entire suite. The test service exit code determines the job result; failure diagnostics and container cleanup are configured. No provider credentials are required. **Historical Phase 1 CI passed on November 7, 2026 (São Paulo): 24 passed, no skipped tests, 1 warning in 6.49s.** [Run and logs](https://github.com/armandor123/terra-firma/actions/runs/42428442702), tested commit `4eb09cc86ed3101e1335f180fb84a6439270c714`. All PostgreSQL-dependent scenarios ran against the isolated PostGIS database. The development Compose stack and live providers were not exercised by this workflow.
 
 Full environment with a dedicated temporary database:
 

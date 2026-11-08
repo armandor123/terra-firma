@@ -53,3 +53,5 @@ Texto proposto para substituir a descrição centrada em um aplicativo mobile. R
 - Não alterar migração aplicada nem reescrever `ai_json` de relatos antigos. Reaproveitar coluna JSONB; o novo schema vale para novas análises. Replay não reanalisa; reanálise e processamento persistente permanecem fora desta etapa.
 - Garantir `human_review_required=true`; não mudar transições de revisão. Atualizar a minuta para não chamar análise Gemini de simulada. `burned_area` é somente classe visual, não hectares ou confirmação.
 - Manter o cruzamento FIRMS/Open-Meteo pendente. Nenhum resultado de teste com transporte controlado deve ser apresentado como prova de inferência ou acurácia real. Detalhes e evidências em `VISAO.md`/`VALIDACAO.md`.
+
+- Evidência remota da Fase 2: [CI 42429976440](https://github.com/armandor123/terra-firma/actions/runs/42429976440), SHA `01ae50dab2e1649a0317bc1069e12b6558c3c6ec`: 65 aprovados, nenhum ignorado, 1 aviso em 10,57 s. Isso valida regressão técnica com PostGIS e HTTP controlado, sem comprovar inferência Gemini real ou qualidade visual.

@@ -14,6 +14,8 @@ A ideia central é permitir que **a IA analise fotos enviadas pelo produtor para
 
 > **Atualização de CI — 07/11/2026:** [Suíte completa com PostGIS aprovada](https://github.com/armandor123/terra-firma/actions/runs/42428442702): **24 testes aprovados, nenhum ignorado**, com um aviso de depreciação do TestClient. Mudanças publicadas em `chore/fase-1`; inicialização do ambiente de desenvolvimento ainda não verificada. Naquela revisão a IA era simulada. A Fase 2 adiciona visão Gemini selecionável; o cruzamento automático continua não implementado.
 
+> **Fase 2:** `VisionProvider`, adaptadores simulated/Gemini e saída validada por sinal estão implementados no envio. [CI aprovou os 65 testes](https://github.com/armandor123/terra-firma/actions/runs/42429976440). O padrão continua simulado. Chamada Gemini real e avaliação da qualidade visual ainda não validadas; nenhuma acurácia é alegada.
+
 ## Sumário
 
 - [Visão geral](#visão-geral)
@@ -471,9 +473,9 @@ Não inclua `DATA_API_KEY`, `FIRMS_MAP_KEY`, `GEMINI_API_KEY` ou `DATABASE_URL` 
 
 ## Testes e validação
 
-Verificação local da Fase 2: **49 aprovados, 16 ignorados e 1 aviso em 1,15 s**; 65 testes descobertos. Os cenários de banco aguardam o CI da Fase 2. Os testes Gemini usam HTTP controlado, sem inferência real nem métricas de qualidade.
+**CI da Fase 2: 65 aprovados, nenhum ignorado e 1 aviso em 10,57 s**, com PostgreSQL/PostGIS. [Execução e logs](https://github.com/armandor123/terra-firma/actions/runs/42429976440), commit testado `01ae50dab2e1649a0317bc1069e12b6558c3c6ec`. A verificação local teve 49 aprovados/16 ignorados sem banco; os 16 foram posteriormente executados no CI. Os testes Gemini usam HTTP controlado, sem inferência real nem métricas de qualidade.
 
-O GitHub Actions está configurado em [`.github/workflows/tests.yml`](.github/workflows/tests.yml) para pushes, pull requests e execução manual. Ele utiliza o banco isolado de `compose.test.yaml` (`postgis/postgis:16-3.7`), aguarda o healthcheck, constrói a imagem de testes e executa a suíte completa. O exit code do serviço de testes determina o resultado do job; há diagnóstico em falha e limpeza dos containers. Não exige credenciais de provedores. **CI aprovado em 07/11/2026 (São Paulo): 24 aprovados, nenhum teste ignorado e 1 aviso em 6,49 s.** [Execução e logs](https://github.com/armandor123/terra-firma/actions/runs/42428442702), commit testado `4eb09cc86ed3101e1335f180fb84a6439270c714`. Todos os cenários PostgreSQL foram executados contra o banco PostGIS isolado. O ambiente Compose de desenvolvimento e provedores reais não foram exercitados por este workflow.
+O GitHub Actions está configurado em [`.github/workflows/tests.yml`](.github/workflows/tests.yml) para pushes, pull requests e execução manual. Ele utiliza o banco isolado de `compose.test.yaml` (`postgis/postgis:16-3.7`), aguarda o healthcheck, constrói a imagem de testes e executa a suíte completa. O exit code do serviço de testes determina o resultado do job; há diagnóstico em falha e limpeza dos containers. Não exige credenciais de provedores. **CI histórico da Fase 1 aprovado em 07/11/2026 (São Paulo): 24 aprovados, nenhum teste ignorado e 1 aviso em 6,49 s.** [Execução e logs](https://github.com/armandor123/terra-firma/actions/runs/42428442702), commit testado `4eb09cc86ed3101e1335f180fb84a6439270c714`. Todos os cenários PostgreSQL foram executados contra o banco PostGIS isolado. O ambiente Compose de desenvolvimento e provedores reais não foram exercitados por este workflow.
 
 Ambiente completo com banco temporário exclusivo:
 

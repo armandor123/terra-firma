@@ -1,6 +1,6 @@
 # Validação — versão 2, PostgreSQL/mobile
 
-## Fase 2 — visão: implementação e verificação inicial
+## Fase 2 — visão: implementação e CI confirmado
 
 Base: branch publicada `chore/fase-1`, SHA `a796bb5c6155352a8fd821dc998c05be85386b55`. Antes de continuar, conferidos os itens da Fase 1: README PT-BR/links corretos, log fora do índice e ignorado, integração em `tests/`, configuração CI com PostGIS e execução final bem-sucedida, licença apenas proposta e About apenas sugerido. [CI final da Fase 1](https://github.com/armandor123/terra-firma/actions/runs/42428636894): 24 aprovados, 1 aviso em 8,38 s, nenhum ignorado. A `main` continua sem merge.
 
@@ -12,7 +12,9 @@ Os itens 1 e 2 da Fase 2 implementam interface/adaptadores, schema e chamada sí
 - Cenários de banco adicionais: duas variações de persistência de visão (sucesso/falha), autorização antes da chamada, JPEG sem EXIF no corpo enviado, reenvio/conflito sem outra chamada, isolamento, revisão/minuta e concorrência com uma chamada de visão.
 - Validação: quatro sinais e seis classes; confiança estrita/finita/limitada e nula em incerteza; falta de evidência, campos extras e classificações contraditórias; metadados de origem/versionamento controlados pelo servidor; HTTP, transporte, bloqueio, truncamento, JSON e versão ausente; nenhum erro externo vira simulação ou `no_signs`.
 
-Resultado remoto da revisão da Fase 2: **pendente nesta verificação inicial**, a registrar após o CI. O aviso observado é de depreciação TestClient/HTTPX, já existente.
+Resultado remoto confirmado em 07/11/2026, 21:30 (São Paulo): **65 passed, 1 warning in 10.57s**, nenhum teste ignorado, container `tests` com saída 0. [CI 42429976440](https://github.com/armandor123/terra-firma/actions/runs/42429976440), [job/logs](https://github.com/armandor123/terra-firma/actions/runs/42429976440/job/128576578842), commit `01ae50dab2e1649a0317bc1069e12b6558c3c6ec`, branch `feat/fase-2-visao`. Runner inicia PostgreSQL 16.15 e extensões PostGIS usando `compose.test.yaml`; a etapa de limpeza também passou. Os 16 cenários de banco pendentes localmente foram executados. O aviso é de depreciação TestClient/HTTPX, já existente.
+
+Publicados três commits lógicos (contrato/adaptadores, integração, documentação), preservando `main`. Árvores Git publicadas foram comparadas com as locais; os SHAs de commits mudaram por publicação via API, sem mudar conteúdo. Alteração documental posterior registra este resultado sem alterar o código testado.
 
 **Não executado:** chamada real Gemini, inferência em foto autorizada, avaliação independente de qualidade, medição de acurácia/latência/custo do fornecedor, adversarial real ou cruzamento ambiental. Não havia chave/modelo configurados. Os 38 testes do adaptador/contrato não são 38 avaliações de fotos. Código/configuração disponível não equivale a integração externa comprovada.
 
