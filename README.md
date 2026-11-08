@@ -9,7 +9,7 @@ A **Group 13** project developed for **Reboot the Earth 2026**. Terra-Firma aims
 
 The central idea is for **AI to analyze photographs submitted by farmers for signs of fire, smoke, dry vegetation and burned vegetation**, then cross-reference those findings with **satellite thermal hotspots and weather data**. Cooperatives receive organized evidence to review incidents and coordinate follow-up.
 
-> **Project status:** MVP under development. The previous technical READMEs describe the official backend and environmental data service. The presentation proposes an HTML/CSS/JavaScript web interface and an analysis worker using Google Gemini. **Phase 2 implements selectable simulated/Gemini vision and a validated structured result. Default mode remains simulated. A live Gemini call with a synthetic fixture has succeeded; visual quality remains unevaluated. Phase 3 adds incident environmental snapshots and deterministic spatial/temporal correlation, with human review.** A wildfire risk index is not calculated. Earlier work includes an Expo reference client for potential mobile integration.
+> **Project status:** MVP under development. The previous technical READMEs describe the official backend and environmental data service. Phase 4 adds the HTML/CSS/JavaScript interface served by Nginx; a persistent analysis worker remains proposed. **Phase 2 implements selectable simulated/Gemini vision and a validated structured result. Default mode remains simulated. A live Gemini call with a synthetic fixture has succeeded; visual quality remains unevaluated. Phase 3 adds incident environmental snapshots and deterministic spatial/temporal correlation, with human review.** A wildfire risk index is not calculated. Earlier work includes an Expo reference client for potential mobile integration.
 
 > **Phase 0 audit — November 7, 2026:** Source inspected at `1825555f9a714ffab131a3e7796f4223bb753944`. The local suite returned **11 passed, 13 skipped, 1 warning**. Both Compose commands were attempted but Docker is unavailable; PostgreSQL/PostGIS scenarios remain unexecuted in this audit. **Phase 0 is blocked pending full environment and database validation.** See [audit and evidence](docs/AUDITORIA.md) and [decisions](docs/DECISOES.md). No application code changed.
 
@@ -95,7 +95,7 @@ The statuses below were checked against source code during Phase 0. The 13 Postg
 | Image AI | VisionProvider with simulated/Gemini implementations; live synthetic-fixture call validated; real-photo evaluation pending |
 | Fire, smoke, dry vegetation and burned vegetation | Structured per-signal output implemented; quality not measured on real photos |
 | Evidence correlation | Implemented: incident snapshot, spatial/time filtering and weather context; not fire confirmation or risk scoring |
-| HTML/CSS/JavaScript web interface | Proposed; no implementation in the audited checkout |
+| HTML/CSS/JavaScript web interface | Implemented and browser/CI tested; see docs/INTERFACE.md |
 | Wildfire risk index | Not implemented; returns a null value |
 | SOS and external communication | Contact details and draft; no automatic dispatch or sending |
 | React Native/Expo application | Reference client; no screens, APK or IPA |
@@ -108,7 +108,7 @@ The presentation defines a target architecture with an **HTML/CSS/JavaScript web
 
 ```mermaid
 flowchart TD
-    M["Proposed web interface"] --> B["Official backend — FastAPI :8000"]
+    M["Nginx web interface"] --> B["Official backend — FastAPI :8000"]
     B --> P["PostgreSQL / PostGIS"]
     B --> F["Private photo volume"]
     B --> D["Data service — FastAPI :8001"]
@@ -170,12 +170,10 @@ The `identidade-visual/` kit was supplied separately. Its paths will only be ava
 ```bash
 git clone https://github.com/armandor123/terra-firma.git
 cd terra-firma
-cp .env.example .env
-python -c "import secrets; print(secrets.token_urlsafe(32))"
-python -c "import secrets; print(secrets.token_urlsafe(32))"
+python scripts/configure.py
 ```
 
-Copy the two different generated values into `POSTGRES_PASSWORD` and `DATA_API_KEY` in `.env`. Keep `DATA_MODE=demo` for the first run. The generated password uses characters compatible with the connection URL constructed by Compose.
+The configurator creates private `.env` credentials without printing secrets or overwriting an existing installation. Keep demo/simulated for the first run.
 
 ```bash
 docker compose up --build -d
@@ -185,6 +183,8 @@ docker compose exec backend python -m backend.bootstrap \
 ```
 
 Bootstrap prompts for a password; there is no default account. The migration must finish successfully before the backend starts. Log in through `/docs`, change the initial password through `/v1/auth/password`, then log in again: changing a password revokes all sessions.
+
+Open **http://127.0.0.1:8080**, sign in with the bootstrap account, change the initial password and sign in again. The cooperative can register farmers and properties in the UI. See [walkthrough and limits](docs/INTERFACE.md).
 
 | Service | Local address |
 |---|---|
@@ -480,7 +480,7 @@ Privacy, retention, a processing notice, restricted access and handling data-sub
 
 ## Interface integration
 
-The web interface proposed in the presentation should implement login, photo submission, location permission, context display and cooperative review. These screens are absent from the audited checkout. Configure CORS or a proxy for the selected origin, retain internal credentials on the server and preserve authentication when retrieving photos.
+Phase 4 adds `web/`, build-free HTML/CSS/JS served by Nginx with a same-origin `/v1/` proxy. Login, mandatory password change, farmer/property registration, optional-location upload, pagination, private photo, AI, evidence and review notes have browser scenarios in `web/tests/test_browser.py`. Tokens stay in memory; logout clears session and photo. Any nested `simulated=true` displays **DADOS SIMULADOS**. Full CI passed: 103 Python/PostGIS, four JavaScript and four browser tests; see [interface and walkthrough](docs/INTERFACE.md).
 
 ### Reference for a potential mobile application
 
@@ -551,7 +551,7 @@ The identity ZIP contains SVG/PNG logos, 30 icons, photographs/crops, a palette,
 | Priority | Next deliverable |
 |---|---|
 | 1 | Execute and record PostgreSQL/PostGIS tests and resolve failures |
-| 2 | Implement the presentation's web interface with photo, location and review flows |
+| 2 | Evaluate the web interface and live flow with authorized field photos |
 | 3 | Validate live connectors, availability and data presentation |
 | 4 | Validate Gemini/incident correlation with authorized real photos and live FIRMS; retain human review |
 | 5 | Add filters/exports, reviewed notifications and usage metrics |

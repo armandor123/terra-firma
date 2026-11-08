@@ -103,3 +103,7 @@ Não foi feita nova chamada real NASA/Open-Meteo, análise por modelo, medição
 3. Se houver falhas, corrigi-las em commits próprios, repetir verificações afetadas e atualizar READMEs/esta auditoria.
 
 Até isso ocorrer, a fase permanece **bloqueada para aprovação**. A inspeção documental e os onze testes locais não autorizam afirmar que PostgreSQL/PostGIS ou a promessa central já funcionam ponta a ponta. Nenhuma fase de implementação foi iniciada.
+
+## Atualização Fase 4 — 08/11/2026 UTC
+
+A tabela inicial é histórica. Interface antes ausente agora implementada: `web/public/index.html:1`, `web/public/app.js:1`, `web/nginx.conf:1`, `compose.yaml:53`; evidência executável em `web/tests/test_browser.py:1` e `web/tests/client.test.js:1`. Bootstrap sem conta padrão em `backend/backend/bootstrap.py:1`, configuração privada em `scripts/configure.py:1`. [CI 42436624805](https://github.com/armandor123/terra-firma/actions/runs/42436624805): 103 Python/PostGIS, quatro JavaScript, quatro navegador aprovados; stack de desenvolvimento e bootstrap confirmados. Confere para fluxo demo; live com foto real ainda não demonstrado. Sem mudança em contratos HTTP nesta fase.

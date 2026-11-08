@@ -8,7 +8,7 @@ Projeto do **Grupo 13**, desenvolvido para o desafio **Reboot the Earth 2026**. 
 
 A ideia central é permitir que **a IA analise fotos enviadas pelo produtor para identificar indícios de focos de incêndio, fumaça, mata seca e vegetação queimada**, cruzando essas evidências com **focos de calor de satélite e dados meteorológicos**. A cooperativa recebe informações organizadas para revisar ocorrências e coordenar encaminhamentos.
 
-> **Estado do projeto:** MVP em desenvolvimento. O backend oficial e o serviço de dados ambientais estão descritos nos READMEs técnicos anteriores. A apresentação propõe interface web em HTML/CSS/JavaScript e um processador de análise com Google Gemini. **A Fase 2 implementa visão simulada/Gemini selecionável e resultado estruturado validado. O padrão continua simulado. Uma chamada Gemini real com imagem sintética funcionou; a qualidade visual continua sem avaliação. A Fase 3 adiciona snapshot ambiental por incidente e cruzamento espacial/temporal determinístico, com revisão humana.** O índice de risco também não é calculado. O histórico contém um cliente Expo de referência para possível integração mobile.
+> **Estado do projeto:** MVP em desenvolvimento. O backend oficial e o serviço de dados ambientais estão descritos nos READMEs técnicos anteriores. A Fase 4 adiciona interface HTML/CSS/JavaScript servida por Nginx; um worker persistente continua proposto. **A Fase 2 implementa visão simulada/Gemini selecionável e resultado estruturado validado. O padrão continua simulado. Uma chamada Gemini real com imagem sintética funcionou; a qualidade visual continua sem avaliação. A Fase 3 adiciona snapshot ambiental por incidente e cruzamento espacial/temporal determinístico, com revisão humana.** O índice de risco também não é calculado. O histórico contém um cliente Expo de referência para possível integração mobile.
 
 > **Auditoria da Fase 0 — 07/11/2026:** Código inspecionado em `1825555f9a714ffab131a3e7796f4223bb753944`. A suíte local retornou **11 aprovados, 13 ignorados e 1 aviso**. Os dois comandos Compose foram tentados, mas Docker não está disponível; os cenários PostgreSQL/PostGIS continuam sem execução nesta auditoria. **Fase 0 bloqueada até a validação integral do ambiente e do banco.** Veja [auditoria e evidências](docs/AUDITORIA.md) e [decisões](docs/DECISOES.md). Nenhum código de aplicação foi alterado.
 
@@ -94,7 +94,7 @@ Os estados abaixo foram conferidos contra o código na Fase 0. Os 13 cenários d
 | IA de imagens | VisionProvider com implementações simulated/Gemini; chamada real sintética validada; avaliação em fotos reais pendente |
 | Fogo, fumaça, mata seca e vegetação queimada | Saída estruturada por sinal implementada; qualidade não medida em fotos reais |
 | Cruzamento de evidências | Implementado: snapshot por incidente, filtro espacial/temporal e clima; não confirma incêndio nem calcula risco |
-| Interface web HTML/CSS/JavaScript | Proposta; sem implementação no checkout auditado |
+| Interface web HTML/CSS/JavaScript | Implementada e testada no navegador/CI; veja docs/INTERFACE.md |
 | Índice de risco de incêndio | Não implementado; retorna valor nulo |
 | SOS e comunicação externa | Contato e minuta; sem despacho ou envio automático |
 | Aplicativo React Native/Expo | Cliente de referência; sem telas, APK ou IPA |
@@ -107,7 +107,7 @@ A apresentação define a arquitetura pretendida com **interface web HTML/CSS/Ja
 
 ```mermaid
 flowchart TD
-    M["Interface web proposta"] --> B["Backend oficial — FastAPI :8000"]
+    M["Interface web Nginx"] --> B["Backend oficial — FastAPI :8000"]
     B --> P["PostgreSQL / PostGIS"]
     B --> F["Volume privado de fotos"]
     B --> D["Serviço de dados — FastAPI :8001"]
@@ -122,7 +122,7 @@ flowchart TD
 | `dados-api/` | Python 3.12, FastAPI e HTTPX; consultas externas, normalização, falhas parciais e cache |
 | Banco | PostgreSQL 16 e PostGIS 3.7, conforme a imagem do Compose |
 | Arquivos | Volume privado; o banco armazena somente a referência da fotografia |
-| Interface proposta | HTML, CSS e JavaScript; navegador no computador ou celular; Nginx para arquivos e proxy na apresentação |
+| Interface web | HTML/CSS/JS nativos, Nginx para arquivos e proxy; computador/celular |
 | Processamento de imagem/contexto | Visão síncrona e snapshot/cruzamento por incidente; worker persistente pendente |
 | Referência mobile | React Native, Expo e TypeScript; cliente de integração anterior, sem aplicativo completo |
 | Execução e testes | Docker Compose e pytest |
@@ -169,12 +169,10 @@ O kit `identidade-visual/` foi fornecido separadamente. Os caminhos desse kit s�
 ```bash
 git clone https://github.com/armandor123/terra-firma.git
 cd terra-firma
-cp .env.example .env
-python -c "import secrets; print(secrets.token_urlsafe(32))"
-python -c "import secrets; print(secrets.token_urlsafe(32))"
+python scripts/configure.py
 ```
 
-Copie os dois valores diferentes gerados para `POSTGRES_PASSWORD` e `DATA_API_KEY` no `.env`. Mantenha `DATA_MODE=demo` na primeira execução. A senha gerada usa caracteres compatíveis com a URL de conexão montada pelo Compose.
+O configurador cria `.env` privado, sem imprimir segredos e sem sobrescrever instalação existente. Mantenha demo/simulated na primeira execução.
 
 ```bash
 docker compose up --build -d
@@ -184,6 +182,8 @@ docker compose exec backend python -m backend.bootstrap \
 ```
 
 O bootstrap solicita uma senha; não existe conta padrão. A migração precisa terminar com sucesso para o backend iniciar. Faça login em `/docs`, troque a senha inicial em `/v1/auth/password` e entre novamente: a troca revoga todas as sessões.
+
+Abra **http://127.0.0.1:8080**, entre com a conta bootstrap, troque a senha e entre novamente. A cooperativa pode cadastrar produtor e propriedade na tela. Veja [roteiro e limites](docs/INTERFACE.md).
 
 | Serviço | Endereço local |
 |---|---|
@@ -471,7 +471,7 @@ O PostGIS usa `geography(Point,4326)`, índice GiST, `ST_DWithin` e `ST_Distance
 
 Migrações SQL possuem versão e checksum, execução transacional e lock. Não altere migrações aplicadas: adicione novo arquivo numerado. Não há downgrade automático nem importação automática do antigo SQLite.
 
-O Compose é para desenvolvimento. Antes de uso público, completar HTTPS, credenciais distintas para migração/aplicação, rede restrita, backup e restauração de banco **e** fotos, monitoramento, limites distribuídos e avaliação de segurança. O limite de login atual é em memória por processo. Cliente web exige configuração explícita de CORS.
+O Compose é para desenvolvimento. Antes de uso público, completar HTTPS, credenciais distintas para migração/aplicação, rede restrita, backup e restauração de banco **e** fotos, monitoramento, limites distribuídos e avaliação de segurança. O limite de login atual é em memória por processo. A interface usa proxy de mesma origem, sem CORS aberto.
 
 Não exponha `PHOTO_DIR` como pasta pública. Múltiplas instâncias exigem volume compartilhado ou adaptador de armazenamento privado. Uma falha entre salvar foto e confirmar a transação pode deixar arquivo órfão; a limpeza automática ainda não existe.
 
@@ -479,7 +479,7 @@ Privacidade, retenção, aviso de tratamento, acesso restrito e atendimento a so
 
 ## Integração da interface
 
-A interface web proposta na apresentação deve implementar login, envio de foto, permissão de localização, consulta de contexto e revisão pela cooperativa. Essas telas não existem no checkout auditado. Configure CORS ou proxy conforme a origem usada, mantenha as credenciais internas no servidor e preserve a autenticação ao acessar fotos.
+A Fase 4 adiciona `web/`, HTML/CSS/JS sem build, servido por Nginx com proxy de mesma origem para `/v1/`. Login, troca obrigatória de senha, cadastro de produtores/propriedades, envio com localização opcional, paginação, foto privada, IA, evidências e revisão com notas têm cenários de navegador em `web/tests/test_browser.py`. Tokens ficam somente em memória; sair limpa sessão e foto. Qualquer `simulated=true` aninhado mostra **DADOS SIMULADOS**. CI completo aprovado: 103 Python/PostGIS, quatro JavaScript e quatro navegador; veja [interface e roteiro](docs/INTERFACE.md).
 
 ### Referência para possível aplicativo mobile
 
@@ -550,7 +550,7 @@ O ZIP de identidade contém logos SVG/PNG, 30 ícones, fotos/recortes, paleta, t
 | Prioridade | Próxima entrega |
 |---|---|
 | 1 | Executar e registrar os testes PostgreSQL/PostGIS e corrigir falhas |
-| 2 | Implementar a interface web da apresentação, com foto, localização e revisão |
+| 2 | Avaliar a interface web e o fluxo live com fotos autorizadas em campo |
 | 3 | Validar conectores reais, disponibilidade e apresentação dos dados |
 | 4 | Validar Gemini/cruzamento com fotos reais autorizadas e FIRMS real; manter revisão humana |
 | 5 | Adicionar filtros/exportação, notificações revisadas e métricas de uso |

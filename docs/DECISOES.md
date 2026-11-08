@@ -85,3 +85,13 @@ Texto proposto para substituir a descrição centrada em um aplicativo mobile. R
 - Consultar coordenadas públicas de demonstração perto de Campinas, sem dados de agricultor/propriedade privada, através do dados-api live e EnvironmentClient reais. NASA FIRMS e Open-Meteo responderam HTTP 200 e envelopes ok/simulated=false. FIRMS retornou lista vazia válida, preservada como lista vazia e no_nearby_hotspot, sem afirmar ausência de fogo.
 - Manter visão simulada nessa verificação para testar somente o contexto ambiental; o agregado simulated=true indica essa entrada e não altera a origem real dos dois envelopes. Não reutilizar o resultado da imagem sintética anterior como se tivesse localização verificada.
 - Registrar snapshot sanitizado em firms-live-check.json e limites em VALIDACAO.md. Sem ocorrência persistida ou associação positiva em campo, não declarar o fluxo real completo validado nem medir acurácia. A limitação do antimeridiano permanece.
+
+## Fase 4 — Interface mínima e sessão
+
+- Usar JavaScript nativo e Nginx com proxy da mesma origem, sem build/CDN/CORS amplo. Servir somente páginas, API v1, contrato e health; Swagger continua na porta local do backend.
+- Tokens ficam somente em memória: recarregar exige novo login. Não criar fila offline nem persistir foto/segredos no navegador. Refresh é único por sessão e não pode ressuscitar logout.
+- Permitir relato sem localização. Geolocalização só por ação explícita, com recusa visível e sem substituição por coordenadas da propriedade. Imagens HEIC/compressão ficam fora deste escopo.
+- Manter UUID, arquivo e metadados congelados para repetição após falha de rede; informar o risco ao descartar. A API continua dona da idempotência e autorização.
+- Acrescentar cadastro mínimo de produtor/propriedade na cooperativa para uso desde bootstrap sem chamadas manuais de API. Senha temporária aparece uma vez; revisão humana segue transições existentes.
+- Marcar qualquer objeto com simulação, inclusive snapshots mistos e legados. Ausência/indisponibilidade de evidência não vira ausência de risco.
+- Validar navegador contra Nginx/PostGIS/serviços reais em demo em stack descartável, sem substituir por mocks. A validação live com foto real continua separada e pendente.

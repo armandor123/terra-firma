@@ -164,3 +164,7 @@ Containers/Compose, migrações em PostgreSQL real, execução do exemplo TypeSc
 Consulte [PLANO-IA-E-TESTES.md](PLANO-IA-E-TESTES.md), etapa 3, para testes de PostgreSQL, adaptador/worker, chamadas reais, qualidade visual e jornada mobile. O plano exige separar testes controlados de chamadas reais e definir metas antes da avaliação final.
 
 Esta atualização é documental: não executou novamente os testes, não forneceu credenciais de IA e não alterou os resultados históricos descritos acima. A aprovação das etapas exige registrar novas evidências.
+
+## Fase 4 — Nginx e navegador, 08/11/2026 UTC
+
+[CI 42436624805](https://github.com/armandor123/terra-firma/actions/runs/42436624805), SHA `f45e67d76cffb8cd99970e5420a60aa440051254`: 103 Python/PostGIS aprovados em 12,45 s, nenhum ignorado, um aviso; quatro Node e quatro Chromium aprovados (7,29 s). Stack Compose de desenvolvimento completa inicializada do zero com bootstrap, envio, snapshot demo e revisão humana. Paginação, perda de resposta/idempotência, recusa de localização e layout móvel exercitados. Sem chamadas reais de provedores; live completo continua pendente. Local: 81 aprovados, 22 ignorados, um aviso, quatro Node aprovados.
