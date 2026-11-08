@@ -1,6 +1,6 @@
 # Terra-Firma
 
-**MVP de relatos com fotos por agricultores e revisão por cooperativas, com conectores de dados ambientais. IA real de imagem e cruzamento automático com satélite/clima são etapas planejadas.**
+**MVP de relatos com fotos por agricultores e revisão por cooperativas, com conectores ambientais e adaptador Gemini selecionável. Validação real da visão e cruzamento automático com satélite/clima permanecem pendentes.**
 
 [English](README.md) · **Português (Brasil)** · [Repositório](https://github.com/armandor123/terra-firma)
 
@@ -8,11 +8,11 @@ Projeto do **Grupo 13**, desenvolvido para o desafio **Reboot the Earth 2026**. 
 
 A ideia central é permitir que **a IA analise fotos enviadas pelo produtor para identificar indícios de focos de incêndio, fumaça, mata seca e vegetação queimada**, cruzando essas evidências com **focos de calor de satélite e dados meteorológicos**. A cooperativa recebe informações organizadas para revisar ocorrências e coordenar encaminhamentos.
 
-> **Estado do projeto:** MVP em desenvolvimento. O backend oficial e o serviço de dados ambientais estão descritos nos READMEs técnicos anteriores. A apresentação propõe interface web em HTML/CSS/JavaScript e um processador de análise com Google Gemini. **A análise de imagens atual é simulada: a identificação real de fogo ou mata seca e o cruzamento automático das evidências ainda precisam ser implementados e validados.** O índice de risco também não é calculado. O histórico contém um cliente Expo de referência para possível integração mobile.
+> **Estado do projeto:** MVP em desenvolvimento. O backend oficial e o serviço de dados ambientais estão descritos nos READMEs técnicos anteriores. A apresentação propõe interface web em HTML/CSS/JavaScript e um processador de análise com Google Gemini. **A Fase 2 implementa visão simulada/Gemini selecionável e resultado estruturado validado. O padrão continua simulado; ainda não houve chamada real Gemini nem avaliação de qualidade visual. O cruzamento automático ambiental não está implementado.** O índice de risco também não é calculado. O histórico contém um cliente Expo de referência para possível integração mobile.
 
 > **Auditoria da Fase 0 — 07/11/2026:** Código inspecionado em `1825555f9a714ffab131a3e7796f4223bb753944`. A suíte local retornou **11 aprovados, 13 ignorados e 1 aviso**. Os dois comandos Compose foram tentados, mas Docker não está disponível; os cenários PostgreSQL/PostGIS continuam sem execução nesta auditoria. **Fase 0 bloqueada até a validação integral do ambiente e do banco.** Veja [auditoria e evidências](docs/AUDITORIA.md) e [decisões](docs/DECISOES.md). Nenhum código de aplicação foi alterado.
 
-> **Atualização de CI — 07/11/2026:** [Suíte completa com PostGIS aprovada](https://github.com/armandor123/terra-firma/actions/runs/42428442702): **24 testes aprovados, nenhum ignorado**, com um aviso de depreciação do TestClient. Mudanças publicadas em `chore/fase-1`; inicialização do ambiente de desenvolvimento ainda não verificada. A IA continua simulada e o cruzamento automático não está implementado.
+> **Atualização de CI — 07/11/2026:** [Suíte completa com PostGIS aprovada](https://github.com/armandor123/terra-firma/actions/runs/42428442702): **24 testes aprovados, nenhum ignorado**, com um aviso de depreciação do TestClient. Mudanças publicadas em `chore/fase-1`; inicialização do ambiente de desenvolvimento ainda não verificada. Naquela revisão a IA era simulada. A Fase 2 adiciona visão Gemini selecionável; o cruzamento automático continua não implementado.
 
 ## Sumário
 
@@ -47,7 +47,7 @@ O Terra-Firma propõe reunir a foto do local, a localização autorizada, os ind
 | Evidência | Papel na proposta |
 |---|---|
 | Foto do produtor | Mostrar as condições locais e possíveis sinais de fogo, fumaça, vegetação seca ou queimada |
-| IA de imagem, com Gemini proposto | Apontar indícios visuais e limitações da imagem para apoiar a triagem |
+| IA de imagem, com adaptador Gemini selecionável | Apontar indícios visuais e limitações da imagem para apoiar a triagem |
 | Localização e horário do relato | Permitir comparação espacial e temporal com observações ambientais |
 | NASA FIRMS | Consultar focos de calor próximos e seus horários de observação |
 | Open-Meteo | Acrescentar temperatura, umidade, vento e precipitação ao contexto |
@@ -64,11 +64,11 @@ O cruzamento pretendido verifica se há focos de calor próximos e temporalmente
 
 1. O produtor envia uma foto e, quando autorizado, sua localização.
 2. O backend valida o acesso, registra a ocorrência e guarda a imagem em armazenamento privado.
-3. Na arquitetura proposta, um worker consulta a IA para avaliar indícios de incêndio, fumaça, mata seca e vegetação queimada.
+3. O backend chama de forma síncrona o provedor de visão selecionado para a foto limpa; o padrão é simulado. Gemini exige credencial no servidor e modelo compatível.
 4. O processador cruza os indícios com focos de calor próximos e informações meteorológicas, preservando origem e horário dos dados.
 5. A cooperativa realiza a revisão humana e registra o encaminhamento da ocorrência.
 
-Os passos 3 e 4 descrevem a evolução pretendida. Hoje, a IA retorna resultado simulado e inconclusivo; o serviço ambiental fornece contexto separadamente. A plataforma apoia decisões e não substitui serviços de emergência ou alertas oficiais. O MVP não envia comunicações automaticamente às autoridades.
+O passo 3 tem implementação configurável, testada com HTTP controlado; a validação Gemini real está pendente. O passo 4 continua futuro: o serviço ambiental fornece contexto separadamente. A plataforma apoia decisões e não substitui serviços de emergência ou alertas oficiais. O MVP não envia comunicações automaticamente às autoridades.
 
 O combate ao desmatamento é a finalidade do projeto. O escopo atual não inclui detecção geral de corte de árvores, medição de desmatamento ou cálculo de hectares queimados por fotografia.
 
@@ -88,8 +88,8 @@ Os estados abaixo foram conferidos contra o código na Fase 0. Os 13 cenários d
 | Histórico e revisão | Consulta paginada e histórico de alterações de status |
 | Relatórios | Resumo acumulado; filtros por período e exportações pendentes |
 | Meteorologia e satélite | Conectores Open-Meteo e NASA FIRMS; modo demo explícito |
-| IA de imagens | Simulada, inconclusiva; Gemini proposto para análise real |
-| Identificação de fogo, fumaça, mata seca e vegetação queimada | Objetivo da análise de imagem; pendente de implementação e validação |
+| IA de imagens | VisionProvider com implementações simulated/Gemini; validação Gemini real pendente |
+| Fogo, fumaça, mata seca e vegetação queimada | Saída estruturada por sinal implementada; qualidade não medida em fotos reais |
 | Cruzamento automático entre imagem, satélite e clima | Proposto; não implementado no fluxo atual |
 | Interface web HTML/CSS/JavaScript | Proposta; sem implementação no checkout auditado |
 | Índice de risco de incêndio | Não implementado; retorna valor nulo |
@@ -108,6 +108,7 @@ flowchart TD
     B --> P["PostgreSQL / PostGIS"]
     B --> F["Volume privado de fotos"]
     B --> D["Serviço de dados — FastAPI :8001"]
+    B -.-> V["API Gemini (opcional)"]
     D --> W["Open-Meteo"]
     D --> N["NASA FIRMS"]
 ```
@@ -119,11 +120,11 @@ flowchart TD
 | Banco | PostgreSQL 16 e PostGIS 3.7, conforme a imagem do Compose |
 | Arquivos | Volume privado; o banco armazena somente a referência da fotografia |
 | Interface proposta | HTML, CSS e JavaScript; navegador no computador ou celular; Nginx para arquivos e proxy na apresentação |
-| Processamento proposto | Worker Python e Google Gemini; análise da imagem e cruzamento com contexto ambiental, pendentes |
+| Processamento de imagens | Adaptador síncrono no backend; Gemini opcional, worker persistente e cruzamento pendentes |
 | Referência mobile | React Native, Expo e TypeScript; cliente de integração anterior, sem aplicativo completo |
 | Execução e testes | Docker Compose e pytest |
 
-O diagrama acima resume os serviços documentados e o acesso previsto pela interface. Na arquitetura de evolução, o worker acessará as fotos privadas, consultará o Gemini e a API de dados e persistirá os resultados para revisão humana. Fila persistente, worker e integração Gemini são componentes propostos.
+O diagrama acima resume os serviços documentados e o acesso previsto pela interface. Na arquitetura de evolução, o worker acessará as fotos privadas, consultará o Gemini e a API de dados e persistirá os resultados para revisão humana. Fila persistente e worker continuam propostos. A Fase 2 implementa Gemini diretamente no backend; ainda não validado com chave real.
 
 A interface acessa o backend. O backend autoriza o acesso à propriedade e consulta o serviço de dados usando uma chave interna. As credenciais dos serviços não devem ser distribuídas no aplicativo.
 
@@ -135,6 +136,8 @@ A interface acessa o backend. O backend autoriza o acesso à propriedade e consu
 | `compose.test.yaml` / `Dockerfile.tests` | Ambiente isolado de testes |
 | `backend/backend/main.py` | Aplicação e rotas do backend |
 | `backend/backend/schemas.py` | Validação das entradas |
+| `backend/backend/vision.py`, `vision_models.py` | Interface, provedores de visão e saída validada |
+| `backend/vision-result.schema.json` | JSON schema do novo resultado visual |
 | `backend/backend/db.py`, `storage.py` | Conexão ao banco e armazenamento privado |
 | `backend/backend/migrate.py`, `migrations/` | Migrador e SQL versionado |
 | `backend/backend/bootstrap.py` | Criação do primeiro representante da cooperativa |
@@ -153,7 +156,7 @@ O kit `identidade-visual/` foi fornecido separadamente. Os caminhos desse kit s�
 ### Requisitos
 
 - Git e Docker com Docker Compose v2 para o fluxo recomendado.
-- Acesso à internet para baixar imagens/dependências; o modo demo não consulta provedores externos durante o uso.
+- Acesso à internet para baixar imagens/dependências; o modo demo ambiental não consulta clima/satélite; visão é configurada separadamente.
 - Python 3.12 para execução direta; o comando de geração de segredos abaixo requer Python local.
 - Para modo live, conectividade com os provedores e uma chave NASA FIRMS para os focos de calor.
 
@@ -228,6 +231,9 @@ O Python não carrega `.env` automaticamente; exporte as variáveis no terminal.
 | `DATA_API_URL` | URL interna do serviço de dados | Compose: `http://dados:8001`; execução direta: `http://127.0.0.1:8001` |
 | `PHOTO_DIR` | Diretório privado de imagens | Compose: `/app/data/photos`; execução direta: `./data/photos` |
 | `TEST_DATABASE_URL` | Banco exclusivo para testes | Configurado no Compose de testes |
+| `VISION_MODE` | Provedor de imagem, independente de DATA_MODE | `simulated` (padrão) ou `gemini` |
+| `GEMINI_API_KEY` | Credencial de visão, somente no backend | Obrigatória no modo gemini |
+| `GEMINI_MODEL` | ID de modelo com visão e JSON estruturado | Obrigatório no modo gemini; sem padrão presumido |
 
 Não envie `.env`, tokens, chaves, bancos ou fotos privadas ao GitHub. Em uma instalação existente, preserve nomes reais do banco/usuário e o projeto Compose: mudar essas variáveis não renomeia um banco já inicializado.
 
@@ -360,10 +366,10 @@ A criação retorna HTTP 201 com `{"id":"...","replayed":false}`. Reenvio idênt
 
 | Modo | Comportamento |
 |---|---|
-| `demo` | Valores fictícios identificados, referência 01/01/2026, sem consulta externa nem modelo de IA |
+| `demo` | Valores ambientais fictícios de 01/01/2026; não seleciona nem desativa a visão |
 | `live` | Consulta Open-Meteo e NASA FIRMS; falhas ficam explícitas, sem substituir silenciosamente por simulação |
 
-Para ativar live, configure `DATA_MODE=live`, forneça `FIRMS_MAP_KEY` quando disponível e recrie o serviço com `docker compose up -d dados`. Sem chave NASA, a meteorologia pode funcionar enquanto os focos ficam indisponíveis. Ativar live não habilita IA nem índice de risco.
+Para ativar live, configure `DATA_MODE=live`, forneça `FIRMS_MAP_KEY` quando disponível e recrie o serviço com `docker compose up -d dados`. Sem chave NASA, a meteorologia pode funcionar enquanto os focos ficam indisponíveis. DATA_MODE não seleciona a visão. Gemini pode ser ativado separadamente por VISION_MODE; não há índice de risco calculado.
 
 ### Serviço de dados — porta 8001
 
@@ -395,34 +401,45 @@ Consulte os termos, cotas e atribuições dos provedores antes de publicar o ser
 
 ## Inteligência artificial
 
-### Estado atual
+### Implementação da Fase 2 e limites da validação
 
-O backend armazena `status=simulated`, `simulated=true`, `classification=inconclusive` e `confidence=null`. **Nenhum modelo analisa a foto atualmente.** A simulação mantém a jornada de ocorrência e revisão, sem alegar detecção real.
+`VisionProvider` define `analyze(image: bytes) -> VisionResult`. `SimulatedProvider` retorna sinais desconhecidos e resultado inconclusivo; `GeminiProvider` envia o JPEG limpo à API `generateContent` do Google e valida a resposta estruturada com Pydantic. Ambos estão ligados ao envio de ocorrência. **A execução Gemini real não foi validada nesta entrega: não havia chave nem modelo configurados. Testes com HTTP controlado não medem qualidade visual.**
 
-O upload de ocorrência não chama o serviço ambiental. `GET /v1/properties/{id}/environment` consulta o contexto separadamente, usando as coordenadas da propriedade. Não há snapshot ambiental vinculado à ocorrência. O horário da ocorrência é o recebimento pelo servidor; o contrato atual de metadata não contém horário de captura da foto. Essas lacunas precisam ser resolvidas antes de declarar cruzamento espacial e temporal.
+| VISION_MODE / resultado | Resultado armazenado |
+|---|---|
+| `simulated` (padrão) | `status=simulated`, `simulated=true`, sinais incertos, `classification=inconclusive` |
+| `gemini`, resposta aceita | `status=completed`, `simulated=false`, evidências validadas e `model_version` devolvida pelo provedor |
+| Timeout, resposta bloqueada/truncada/inválida, erro HTTP ou transporte Gemini | `status=unavailable`, `simulated=false`, sinais desconhecidos, `classification=inconclusive`, `error_code` controlado |
 
-### Análise de imagem e cruzamento previstos
+`VISION_MODE` independe do `DATA_MODE` ambiental. Gemini exige `GEMINI_API_KEY` e `GEMINI_MODEL` no backend; falta de configuração ou modo desconhecido impede o startup. Nenhum ID de modelo é presumido silenciosamente. Escolha um modelo disponível à conta, com visão e JSON estruturado, e valide-o antes de uso operacional. Configure `.env` e recrie o backend:
 
-O **Google Gemini** aparece na apresentação como serviço de IA multimodal proposto. O processador deverá analisar a fotografia para indicar sinais visuais de **fogo ou chamas, fumaça, mata seca e vegetação queimada**. Esses sinais devem ser acompanhados de limitações de qualidade da imagem e da possibilidade de resultado inconclusivo.
+```bash
+# No .env: VISION_MODE=gemini, GEMINI_API_KEY=<segredo do servidor>, GEMINI_MODEL=<ID de modelo compatível>
+docker compose up --build -d backend
+```
 
-A análise da imagem será a etapa central. O contexto de satélite e clima complementará essa análise: comparar localização e horário com os focos NASA FIRMS e associar os dados Open-Meteo disponíveis. Os critérios de distância, janela temporal e combinação das evidências ainda precisam ser definidos e testados. O resultado pretendido é um conjunto de evidências rastreáveis para revisão, sem declarar incêndio confirmado apenas pela IA.
+O resultado aparece no campo `ai` da ocorrência e fica persistido na coluna existente `ai_json`. Resultados antigos são preservados; reenviar um UUID existente não o reanalisa. Não há endpoint de reanálise nem worker persistente nesta fase.
 
-| Etapa proposta | Resultado esperado | Situação documentada |
-|---|---|---|
-| Análise visual | Indícios de fogo, fumaça, mata seca ou vegetação queimada | Simulação atual; modelo real pendente |
-| Consulta ambiental | Focos próximos, meteorologia, origem e horário | Conectores descritos nos READMEs anteriores; dependem de configuração e validação live |
-| Cruzamento | Relação espacial e temporal das evidências e eventuais divergências | Pendente |
-| Revisão humana | Decisão registrada pela cooperativa | Fluxo de revisão descrito no backend |
+### Saída estruturada
 
-### Evolução prevista
+| Campo | Significado / validação |
+|---|---|
+| `signals.fire`, `.smoke`, `.dry_vegetation`, `.burned_vegetation` | Cada um contém `presence` (`present`, `absent`, `uncertain`), `confidence` e justificativa de 1–240 caracteres |
+| `confidence` de cada sinal | Valor declarado pelo modelo entre 0 e 1; nulo para sinal incerto. **Não é probabilidade calibrada nem acurácia medida.** A confiança global legada continua nula |
+| `image_assessable`, `limitations` | Booleano e `dark`, `blurry`, `no_sky`, `obstructed`, `low_resolution`, `overexposed`, `cropped`, `other`; falha do provedor não inventa limitações da foto |
+| `classification` | `fire_suspected`, `smoke_suspected`, `dry_vegetation`, `burned_area`, `no_signs`, `inconclusive` |
+| `model_version`, `requested_model`, `prompt_version`, `schema_version` | Versão retornada pelo provedor após sucesso, ID configurado, `terra-firma-vision-v1`, `1.0`; versão de modelo nula na simulação/falha |
+| `human_review_required` | Sempre true. A IA nunca muda automaticamente o status de revisão |
 
-1. Definir a versão e a configuração do Gemini proposto e reunir imagens autorizadas e rotuladas, incluindo vegetação seca e situações visualmente semelhantes a incêndio.
-2. Implementar o adaptador de visão e processamento persistente em fila/worker, recuperável após reinícios.
-3. Implementar o cruzamento com NASA FIRMS e Open-Meteo, registrando coordenadas, horários, origem, versão do modelo e limitações.
-4. Avaliar precisão, recall, falsos positivos/negativos, resultados inconclusivos, latência e custo em conjunto independente.
-5. Manter revisão humana e documentar evidências antes de liberar um piloto.
+Os quatro sinais são obrigatórios; campos desconhecidos, confiança não finita/fora do intervalo e classificações contraditórias são rejeitados. Uma suspeita exige o sinal correspondente presente. `no_signs` exige os quatro sinais ausentes e imagem avaliável. Imagem não avaliável exige `inconclusive`. `burned_area` significa indício visual de vegetação queimada, **não hectares nem incêndio confirmado**. Veja [o schema de saída](backend/vision-result.schema.json) e [decisões e contrato](docs/VISAO.md).
 
-Não há porcentagem de acerto validada. Uma imagem isolada não comprova localização, extensão do incêndio ou hectares queimados. Aparência de mata seca não equivale a uma medição de umidade. Resultado inconclusivo, ausência de foco de calor ou indisponibilidade de uma fonte não devem ser convertidos em ausência de risco. O plano técnico anterior está em [docs/PLANO-IA-E-TESTES.md](docs/PLANO-IA-E-TESTES.md).
+### Execução e escopo restante
+
+Autorização e idempotência são verificadas antes do modelo. Só são enviados JPEG reencodificado, instruções e schema; não são enviados dados do agricultor, descrição ou localização. Reenvio aceito não chama Gemini novamente, inclusive em concorrência. Falhas do provedor permitem registrar o relato para revisão humana, sem fallback silencioso para simulação.
+
+O processamento é síncrono na requisição/transação atual, com timeout HTTP de 20 segundos por operação (conexão: 5 segundos), uma tentativa e nenhum retry automático. Isso acrescenta latência e mantém o lock do banco. Falha do processo após consultar o provedor e antes do commit pode gerar outra chamada cobrada no reenvio; não existe garantia de execução externa exatamente uma vez nem fila durável. O prompt trata texto na foto como conteúdo não confiável; é uma precaução, não uma garantia medida contra injeção de instruções.
+
+O upload ainda não chama o serviço ambiental. `GET /v1/properties/{id}/environment` consulta o contexto da propriedade separadamente. Snapshot ambiental, horário de captura, cruzamento imagem × FIRMS × clima e índice de risco continuam ausentes. Foto isolada não comprova localização, umidade ou hectares queimados. Ausência de sinais/focos não comprova segurança. Próximos passos: validação real autorizada, avaliação independente com imagens rotuladas e depois worker/cruzamento planejados. Nenhuma métrica de acurácia de IA foi medida.
 
 ## Persistência e operação
 
@@ -450,9 +467,11 @@ Responsabilidades ainda pendentes no aplicativo: câmera/galeria, conversão de 
 
 Para celular na mesma rede, configure `BACKEND_BIND=0.0.0.0` em rede confiável, execute `docker compose up -d backend` e utilize `http://IP_DO_COMPUTADOR:8000`. `localhost` no aparelho aponta para o próprio celular. Em ambiente público use HTTPS.
 
-Não inclua `DATA_API_KEY`, `FIRMS_MAP_KEY` ou `DATABASE_URL` no app; variáveis `EXPO_PUBLIC_*` são públicas. A URL de foto exige Bearer. Veja [docs/MOBILE.md](docs/MOBILE.md).
+Não inclua `DATA_API_KEY`, `FIRMS_MAP_KEY`, `GEMINI_API_KEY` ou `DATABASE_URL` no app; variáveis `EXPO_PUBLIC_*` são públicas. A URL de foto exige Bearer. Veja [docs/MOBILE.md](docs/MOBILE.md).
 
 ## Testes e validação
+
+Verificação local da Fase 2: **49 aprovados, 16 ignorados e 1 aviso em 1,15 s**; 65 testes descobertos. Os cenários de banco aguardam o CI da Fase 2. Os testes Gemini usam HTTP controlado, sem inferência real nem métricas de qualidade.
 
 O GitHub Actions está configurado em [`.github/workflows/tests.yml`](.github/workflows/tests.yml) para pushes, pull requests e execução manual. Ele utiliza o banco isolado de `compose.test.yaml` (`postgis/postgis:16-3.7`), aguarda o healthcheck, constrói a imagem de testes e executa a suíte completa. O exit code do serviço de testes determina o resultado do job; há diagnóstico em falha e limpeza dos containers. Não exige credenciais de provedores. **CI aprovado em 07/11/2026 (São Paulo): 24 aprovados, nenhum teste ignorado e 1 aviso em 6,49 s.** [Execução e logs](https://github.com/armandor123/terra-firma/actions/runs/42428442702), commit testado `4eb09cc86ed3101e1335f180fb84a6439270c714`. Todos os cenários PostgreSQL foram executados contra o banco PostGIS isolado. O ambiente Compose de desenvolvimento e provedores reais não foram exercitados por este workflow.
 
@@ -509,7 +528,7 @@ O ZIP de identidade contém logos SVG/PNG, 30 ícones, fotos/recortes, paleta, t
 | 1 | Executar e registrar os testes PostgreSQL/PostGIS e corrigir falhas |
 | 2 | Implementar a interface web da apresentação, com foto, localização e revisão |
 | 3 | Validar conectores reais, disponibilidade e apresentação dos dados |
-| 4 | Implementar Gemini para fogo, fumaça e mata seca, cruzar com satélite/clima e validar o fluxo com revisão humana |
+| 4 | Validar Gemini com fotos autorizadas, depois implementar cruzamento com satélite/clima e manter revisão humana |
 | 5 | Adicionar filtros/exportação, notificações revisadas e métricas de uso |
 | 6 | Avaliar polígonos, fontes históricas e métodos validados de risco/propagação |
 
@@ -536,4 +555,4 @@ Documentação técnica complementar:
 
 Referências dos conectores: [Open-Meteo](https://open-meteo.com/en/docs) e [NASA FIRMS API](https://firms.modaps.eosdis.nasa.gov/api/).
 
-**Base desta atualização — 07/11/2026:** auditoria do código da revisão `1825555f9a714ffab131a3e7796f4223bb753944` e execução local de testes registrada acima. As descrições de produto, apresentação e identidade visual foram preservadas da documentação de 06/11; seus arquivos externos não foram revalidados. Não houve nova chamada real a provedor ou modelo. Esta fase altera somente documentação e permanece bloqueada para validação integral do banco/ambiente.
+**Base histórica da Fase 0 — 07/11/2026:** auditoria do código da revisão `1825555f9a714ffab131a3e7796f4223bb753944` e execução local de testes registrada acima. As descrições de produto, apresentação e identidade visual foram preservadas da documentação de 06/11; seus arquivos externos não foram revalidados. Não houve nova chamada real a provedor ou modelo. Esta fase altera somente documentação e permanece bloqueada para validação integral do banco/ambiente.

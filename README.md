@@ -1,7 +1,7 @@
 
 # Terra-Firma
 
-**An MVP for farmer photo reports and cooperative review, with environmental data connectors. Real image AI and automatic satellite/weather cross-referencing are planned.**
+**An MVP for farmer photo reports and cooperative review, with environmental connectors and a selectable Gemini vision adapter. Live vision validation and automatic satellite/weather cross-referencing remain pending.**
 
 **English** · [Português (Brasil)](README.pt-BR.md) · [Repository](https://github.com/armandor123/terra-firma)
 
@@ -9,11 +9,11 @@ A **Group 13** project developed for **Reboot the Earth 2026**. Terra-Firma aims
 
 The central idea is for **AI to analyze photographs submitted by farmers for signs of fire, smoke, dry vegetation and burned vegetation**, then cross-reference those findings with **satellite thermal hotspots and weather data**. Cooperatives receive organized evidence to review incidents and coordinate follow-up.
 
-> **Project status:** MVP under development. The previous technical READMEs describe the official backend and environmental data service. The presentation proposes an HTML/CSS/JavaScript web interface and an analysis worker using Google Gemini. **Current image analysis is simulated: real identification of fire or dry vegetation and automatic cross-referencing of evidence still require implementation and validation.** A wildfire risk index is not calculated. Earlier work includes an Expo reference client for potential mobile integration.
+> **Project status:** MVP under development. The previous technical READMEs describe the official backend and environmental data service. The presentation proposes an HTML/CSS/JavaScript web interface and an analysis worker using Google Gemini. **Phase 2 implements selectable simulated/Gemini vision and a validated structured result. Default mode remains simulated; no live Gemini call or visual-quality evaluation has been completed. Automatic environmental cross-referencing is not implemented.** A wildfire risk index is not calculated. Earlier work includes an Expo reference client for potential mobile integration.
 
 > **Phase 0 audit — November 7, 2026:** Source inspected at `1825555f9a714ffab131a3e7796f4223bb753944`. The local suite returned **11 passed, 13 skipped, 1 warning**. Both Compose commands were attempted but Docker is unavailable; PostgreSQL/PostGIS scenarios remain unexecuted in this audit. **Phase 0 is blocked pending full environment and database validation.** See [audit and evidence](docs/AUDITORIA.md) and [decisions](docs/DECISOES.md). No application code changed.
 
-> **CI update — November 7, 2026:** [Full PostGIS suite passed](https://github.com/armandor123/terra-firma/actions/runs/42428442702): **24 tests passed, none skipped**, with one TestClient deprecation warning. Changes are published on `chore/fase-1`; development-stack startup remains unverified. AI remains simulated and automatic evidence cross-referencing is not implemented.
+> **CI update — November 7, 2026:** [Full PostGIS suite passed](https://github.com/armandor123/terra-firma/actions/runs/42428442702): **24 tests passed, none skipped**, with one TestClient deprecation warning. Changes are published on `chore/fase-1`; development-stack startup remains unverified. At that revision AI was simulated. Phase 2 now adds selectable Gemini vision; automatic evidence cross-referencing remains unimplemented.
 
 ## Contents
 
@@ -48,7 +48,7 @@ Terra-Firma proposes bringing the site photograph, authorized location, AI obser
 | Evidence | Role in the proposal |
 |---|---|
 | Farmer photograph | Show local conditions and possible fire, smoke, dry vegetation or burned vegetation |
-| Image AI, with Gemini proposed | Identify visual signs and image limitations to support triage |
+| Image AI, with selectable Gemini adapter | Identify visual signs and image limitations to support triage |
 | Report location and time | Enable spatial and temporal comparison with environmental observations |
 | NASA FIRMS | Retrieve nearby thermal hotspots and their observation times |
 | Open-Meteo | Add temperature, humidity, wind and precipitation as context |
@@ -65,11 +65,11 @@ The proposed cross-referencing checks for nearby hotspots with observation times
 
 1. The farmer submits a photo and, when authorized, their location.
 2. The backend checks access, records the incident and saves the image in private storage.
-3. In the proposed architecture, a worker requests AI assessment of signs of fire, smoke, dry vegetation and burned vegetation.
+3. The backend synchronously calls the selected vision provider for the cleaned photograph; the default provider is simulated. Gemini requires server-side credentials and a compatible model.
 4. The processor cross-references the findings with nearby thermal hotspots and weather information, retaining source and observation times.
 5. The cooperative performs human review and records the incident follow-up.
 
-Steps 3 and 4 describe intended development. Today, AI returns a simulated, inconclusive result; the environmental service supplies context separately. The platform supports decisions and does not replace emergency services or official warnings. The MVP does not automatically send communications to authorities.
+Step 3 has a configurable implementation, tested with controlled HTTP responses; live Gemini validation is pending. Step 4 remains future work: the environmental service supplies context separately. The platform supports decisions and does not replace emergency services or official warnings. The MVP does not automatically send communications to authorities.
 
 Combating deforestation is the project's purpose. Current scope does not include general tree-clearing detection, deforestation measurement or calculating burned hectares from photographs.
 
@@ -89,8 +89,8 @@ The statuses below were checked against source code during Phase 0. The 13 Postg
 | Incident history and review | Paginated queries and status-change history |
 | Reports | Cumulative summary; period filters and exports pending |
 | Weather and satellite data | Open-Meteo and NASA FIRMS connectors; explicit demo mode |
-| Image AI | Simulated and inconclusive; Gemini proposed for real analysis |
-| Fire, smoke, dry vegetation and burned vegetation identification | Intended image-analysis capability; implementation and validation pending |
+| Image AI | VisionProvider with simulated/Gemini implementations; live Gemini validation pending |
+| Fire, smoke, dry vegetation and burned vegetation | Structured per-signal output implemented; quality not measured on real photos |
 | Automatic image/satellite/weather cross-referencing | Proposed; not implemented in the current flow |
 | HTML/CSS/JavaScript web interface | Proposed; no implementation in the audited checkout |
 | Wildfire risk index | Not implemented; returns a null value |
@@ -109,6 +109,7 @@ flowchart TD
     B --> P["PostgreSQL / PostGIS"]
     B --> F["Private photo volume"]
     B --> D["Data service — FastAPI :8001"]
+    B -.-> V["Gemini API (optional)"]
     D --> W["Open-Meteo"]
     D --> N["NASA FIRMS"]
 ```
@@ -120,11 +121,11 @@ flowchart TD
 | Database | PostgreSQL 16 and PostGIS 3.7, as specified by the Compose image |
 | Files | Private volume; the database stores only the photograph reference |
 | Proposed interface | HTML, CSS and JavaScript; desktop/mobile browser; Nginx for static files and proxy in the presentation |
-| Proposed processing | Python worker and Google Gemini; image analysis and environmental cross-referencing, pending |
+| Image processing | Synchronous vision adapter in the backend; Gemini optional, persistent worker and cross-referencing pending |
 | Mobile reference | React Native, Expo and TypeScript; earlier integration client, without a complete application |
 | Runtime and tests | Docker Compose and pytest |
 
-The diagram above summarizes the documented services and intended interface access. In the target architecture, the worker will read private photos, query Gemini and the data API, and persist results for human review. The persistent queue, worker and Gemini integration are proposed components.
+The diagram above summarizes the documented services and intended interface access. In the target architecture, the worker will read private photos, query Gemini and the data API, and persist results for human review. The persistent queue and worker remain proposed. Phase 2 implements Gemini directly in the backend; it has not been validated with a live API key.
 
 The interface calls the backend. The backend authorizes property access and calls the data service using an internal key. Service credentials must not be distributed in the application.
 
@@ -136,6 +137,8 @@ The interface calls the backend. The backend authorizes property access and call
 | `compose.test.yaml` / `Dockerfile.tests` | Isolated test environment |
 | `backend/backend/main.py` | Backend application and routes |
 | `backend/backend/schemas.py` | Input validation |
+| `backend/backend/vision.py`, `vision_models.py` | Vision interface, providers and validated output |
+| `backend/vision-result.schema.json` | New visual-result JSON schema |
 | `backend/backend/db.py`, `storage.py` | Database connection and private storage |
 | `backend/backend/migrate.py`, `migrations/` | Migration runner and versioned SQL |
 | `backend/backend/bootstrap.py` | First cooperative representative creation |
@@ -154,7 +157,7 @@ The `identidade-visual/` kit was supplied separately. Its paths will only be ava
 ### Requirements
 
 - Git and Docker with Docker Compose v2 for the recommended workflow.
-- Internet access to download images/dependencies; demo mode does not query external providers during use.
+- Internet access to download images/dependencies; environmental demo mode does not query weather/satellite providers; vision is configured separately.
 - Python 3.12 for direct execution; the secret-generation command below requires local Python.
 - For live mode, provider connectivity and a NASA FIRMS key for real hotspots.
 
@@ -229,6 +232,9 @@ Python does not load `.env` automatically; export variables in the terminal. The
 | `DATA_API_URL` | Internal data service URL | Compose: `http://dados:8001`; direct execution: `http://127.0.0.1:8001` |
 | `PHOTO_DIR` | Private image directory | Compose: `/app/data/photos`; direct execution: `./data/photos` |
 | `TEST_DATABASE_URL` | Dedicated test database | Set by test Compose |
+| `VISION_MODE` | Image provider, independent of DATA_MODE | `simulated` (default) or `gemini` |
+| `GEMINI_API_KEY` | Vision credential; backend only | Required in gemini mode |
+| `GEMINI_MODEL` | Model ID supporting image input and structured JSON | Required in gemini mode; no assumed default |
 
 Do not commit `.env`, tokens, keys, databases or private photos. For an existing installation, preserve the actual database/user names and Compose project: changing these variables does not rename an initialized database.
 
@@ -361,10 +367,10 @@ Creation returns HTTP 201 with `{"id":"...","replayed":false}`. An identical ret
 
 | Mode | Behavior |
 |---|---|
-| `demo` | Clearly identified fictional values, reference date January 1, 2026, without external queries or an AI model |
+| `demo` | Fictional environmental values dated January 1, 2026; does not select or disable vision |
 | `live` | Queries Open-Meteo and NASA FIRMS; failures are explicit, without silently substituting simulated data |
 
-To enable live mode, set `DATA_MODE=live`, provide `FIRMS_MAP_KEY` when available, and recreate the service with `docker compose up -d dados`. Without a NASA key, weather may work while hotspots remain unavailable. Live mode does not enable AI or a risk index.
+To enable live mode, set `DATA_MODE=live`, provide `FIRMS_MAP_KEY` when available, and recreate the service with `docker compose up -d dados`. Without a NASA key, weather may work while hotspots remain unavailable. DATA_MODE does not select vision. Gemini can be enabled separately with VISION_MODE; no risk index is calculated.
 
 ### Data service — port 8001
 
@@ -396,34 +402,45 @@ Check provider terms, quotas and attribution requirements before publishing the 
 
 ## Artificial intelligence
 
-### Current state
+### Phase 2 implementation and validation limits
 
-The backend stores `status=simulated`, `simulated=true`, `classification=inconclusive` and `confidence=null`. **No model currently analyzes the photo.** Simulation preserves the reporting and review journey without claiming real detection.
+`VisionProvider` defines `analyze(image: bytes) -> VisionResult`. `SimulatedProvider` returns unknown signals and an inconclusive result; `GeminiProvider` sends the cleaned JPEG to Google's `generateContent` API and validates the structured response with Pydantic. Both are wired into incident submission. **Live Gemini execution has not been validated in this delivery: no API key or model was configured. Controlled HTTP tests do not measure visual quality.**
 
-Uploading an incident does not call the environmental service. `GET /v1/properties/{id}/environment` queries context separately, using the property coordinates. Environmental snapshots are not stored with incidents. The incident timestamp is server receipt time; the current metadata contract has no photo capture timestamp. These gaps must be addressed before claiming spatial and temporal cross-referencing.
+| VISION_MODE / outcome | Stored result |
+|---|---|
+| `simulated` (default) | `status=simulated`, `simulated=true`, all signals uncertain, `classification=inconclusive` |
+| `gemini`, accepted response | `status=completed`, `simulated=false`, validated evidence and provider-returned `model_version` |
+| Gemini timeout, blocked/truncated/invalid response, HTTP or transport error | `status=unavailable`, `simulated=false`, unknown signals, `classification=inconclusive`, controlled `error_code` |
 
-### Planned image analysis and cross-referencing
+`VISION_MODE` is independent of environmental `DATA_MODE`. Gemini requires `GEMINI_API_KEY` and `GEMINI_MODEL` on the backend; missing configuration or an unknown mode fails startup. No model ID is silently assumed. Choose a model available to your account that supports images and structured JSON, and validate it before operational use. Configure `.env`, then recreate the backend:
 
-The presentation names **Google Gemini** as the proposed multimodal AI service. The processor should assess the photograph for visual signs of **fire or flames, smoke, dry vegetation and burned vegetation**. Findings should include image-quality limitations and support an inconclusive outcome.
+```bash
+# In .env: VISION_MODE=gemini, GEMINI_API_KEY=<server secret>, GEMINI_MODEL=<compatible model ID>
+docker compose up --build -d backend
+```
 
-Image analysis will be the central step. Satellite and weather context will complement it: compare location and time against NASA FIRMS hotspots and associate available Open-Meteo data. Distance thresholds, time windows and evidence-combination criteria still need definition and testing. The intended output is traceable evidence for review, without declaring a confirmed fire based solely on AI.
+The result is returned in the incident's `ai` field and persisted in its existing `ai_json` column. Existing stored results are preserved; replaying an existing UUID does not reanalyze it. No reanalysis endpoint or persistent worker is included.
 
-| Proposed step | Expected output | Documented status |
-|---|---|---|
-| Visual analysis | Signs of fire, smoke, dry vegetation or burned vegetation | Currently simulated; real model pending |
-| Environmental query | Nearby hotspots, weather, source and time | Connectors described in previous READMEs; configuration and live validation required |
-| Cross-referencing | Spatial/temporal relationship and possible evidence discrepancies | Pending |
-| Human review | Decision recorded by the cooperative | Review flow described in the backend |
+### Structured output
 
-### Planned development
+| Field | Meaning / validation |
+|---|---|
+| `signals.fire`, `.smoke`, `.dry_vegetation`, `.burned_vegetation` | Each contains `presence` (`present`, `absent`, `uncertain`), `confidence` and a 1–240 character justification |
+| `confidence` within each signal | Model-declared value from 0 to 1; null for uncertain signals. **Not calibrated probability or measured accuracy.** Global legacy `confidence` stays null |
+| `image_assessable`, `limitations` | Boolean plus `dark`, `blurry`, `no_sky`, `obstructed`, `low_resolution`, `overexposed`, `cropped`, `other`; no invented image limitation on provider failure |
+| `classification` | `fire_suspected`, `smoke_suspected`, `dry_vegetation`, `burned_area`, `no_signs`, `inconclusive` |
+| `model_version`, `requested_model`, `prompt_version`, `schema_version` | Provider-returned model version after success, configured model ID, `terra-firma-vision-v1`, `1.0`; model version is null for simulation/failure |
+| `human_review_required` | Always true. AI never changes the review status automatically |
 
-1. Define the proposed Gemini version/configuration and collect authorized, labeled images, including dry vegetation and scenes visually similar to fire.
-2. Implement a vision adapter and persistent queue/worker processing that can recover after restarts.
-3. Implement NASA FIRMS and Open-Meteo cross-referencing, recording coordinates, timestamps, source, model version and limitations.
-4. Evaluate precision, recall, false positives/negatives, inconclusive outcomes, latency and cost using an independent dataset.
-5. Retain human review and document evidence before releasing a pilot.
+The four signals are mandatory; unknown fields, nonfinite/out-of-range scores and contradictory classifications are rejected. A suspected class requires the corresponding signal to be present. `no_signs` requires all four signals absent and an assessable image. An unassessable image requires `inconclusive`. `burned_area` means a visual sign of burned vegetation, **not hectares or a confirmed fire**. See [the result schema](backend/vision-result.schema.json) and [implementation decisions and contract](docs/VISAO.md).
 
-No accuracy percentage has been validated. A single photograph does not establish location, fire extent or burned hectares. Apparent dryness is not a moisture measurement. An inconclusive result, absent thermal hotspot or unavailable source must not be interpreted as absence of risk. The earlier technical plan is in [docs/PLANO-IA-E-TESTES.md](docs/PLANO-IA-E-TESTES.md).
+### Execution and remaining scope
+
+Authorization and idempotency checks run before the model. Only the reencoded JPEG, instructions and output schema are sent; no farmer metadata, description or location is included. A successful replay does not call Gemini again, including concurrent retries. Provider failures still allow an incident to be stored for human review, with no silent simulation fallback.
+
+Processing is synchronous in the current request/transaction, with HTTP timeouts of 20 seconds per operation (connect: 5 seconds), one attempt and no automatic retry. This adds latency and holds the database lock. A crash after a provider call but before database commit can lead to another billable call on retry; there is no exactly-once external execution guarantee or durable queue. The prompt treats image text as untrusted content; this is a precaution, not a measured prompt-injection guarantee.
+
+Incident upload still does not call the environmental service. `GET /v1/properties/{id}/environment` queries property context separately. Environmental snapshots, photo capture time, image × FIRMS × weather correlation and a risk index remain absent. A single photo cannot establish location, moisture or burned hectares. Lack of signs/hotspots does not establish safety. Next steps are authorized live validation, independent labeled-image evaluation and then the planned worker/correlation work. No AI accuracy metric has been measured.
 
 ## Persistence and operations
 
@@ -451,9 +468,11 @@ Pending application responsibilities include camera/gallery, HEIC conversion, co
 
 For a phone on the same network, set `BACKEND_BIND=0.0.0.0` on a trusted network, run `docker compose up -d backend`, and use `http://COMPUTER_IP:8000`. On a phone, `localhost` points to the phone itself. Use HTTPS in a public environment.
 
-Never include `DATA_API_KEY`, `FIRMS_MAP_KEY` or `DATABASE_URL` in the application; `EXPO_PUBLIC_*` variables are public. Photo URLs require Bearer authentication. See [docs/MOBILE.md](docs/MOBILE.md).
+Never include `DATA_API_KEY`, `FIRMS_MAP_KEY`, `GEMINI_API_KEY` or `DATABASE_URL` in the application; `EXPO_PUBLIC_*` variables are public. Photo URLs require Bearer authentication. See [docs/MOBILE.md](docs/MOBILE.md).
 
 ## Testing and validation
+
+Phase 2 local verification: **49 passed, 16 skipped, 1 warning in 1.15s**; 65 tests collected. Database scenarios await the Phase 2 CI run. Gemini tests use controlled HTTP responses, without real inference or quality metrics.
 
 GitHub Actions is configured in [`.github/workflows/tests.yml`](.github/workflows/tests.yml) for pushes, pull requests and manual runs. It uses the isolated `compose.test.yaml` database (`postgis/postgis:16-3.7`), waits for its healthcheck, builds the test image and runs the entire suite. The test service exit code determines the job result; failure diagnostics and container cleanup are configured. No provider credentials are required. **CI passed on November 7, 2026 (São Paulo): 24 passed, no skipped tests, 1 warning in 6.49s.** [Run and logs](https://github.com/armandor123/terra-firma/actions/runs/42428442702), tested commit `4eb09cc86ed3101e1335f180fb84a6439270c714`. All PostgreSQL-dependent scenarios ran against the isolated PostGIS database. The development Compose stack and live providers were not exercised by this workflow.
 
@@ -510,7 +529,7 @@ The identity ZIP contains SVG/PNG logos, 30 icons, photographs/crops, a palette,
 | 1 | Execute and record PostgreSQL/PostGIS tests and resolve failures |
 | 2 | Implement the presentation's web interface with photo, location and review flows |
 | 3 | Validate live connectors, availability and data presentation |
-| 4 | Implement Gemini for fire, smoke and dry vegetation, cross-reference satellite/weather data and validate the flow with human review |
+| 4 | Validate Gemini with authorized photos, then implement satellite/weather cross-referencing and retain human review |
 | 5 | Add filters/exports, reviewed notifications and usage metrics |
 | 6 | Assess polygons, historical sources and validated risk/spread methods |
 
@@ -537,4 +556,4 @@ Additional technical documentation, currently in Portuguese:
 
 Connector references: [Open-Meteo](https://open-meteo.com/en/docs) and [NASA FIRMS API](https://firms.modaps.eosdis.nasa.gov/api/).
 
-**Update basis — November 7, 2026:** Phase 0 source audit of revision `1825555f9a714ffab131a3e7796f4223bb753944` and the local test execution recorded above. Product, presentation and visual-identity descriptions were retained from the November 6 documentation; their external assets were not revalidated. No new live-provider or model call was made. This phase changes documentation only and remains blocked for full database/environment validation.
+**Historical Phase 0 update basis — November 7, 2026:** Phase 0 source audit of revision `1825555f9a714ffab131a3e7796f4223bb753944` and the local test execution recorded above. Product, presentation and visual-identity descriptions were retained from the November 6 documentation; their external assets were not revalidated. No new live-provider or model call was made. This phase changes documentation only and remains blocked for full database/environment validation.

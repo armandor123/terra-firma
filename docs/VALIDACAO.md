@@ -1,5 +1,21 @@
 # Validação — versão 2, PostgreSQL/mobile
 
+## Fase 2 — visão: implementação e verificação inicial
+
+Base: branch publicada `chore/fase-1`, SHA `a796bb5c6155352a8fd821dc998c05be85386b55`. Antes de continuar, conferidos os itens da Fase 1: README PT-BR/links corretos, log fora do índice e ignorado, integração em `tests/`, configuração CI com PostGIS e execução final bem-sucedida, licença apenas proposta e About apenas sugerido. [CI final da Fase 1](https://github.com/armandor123/terra-firma/actions/runs/42428636894): 24 aprovados, 1 aviso em 8,38 s, nenhum ignorado. A `main` continua sem merge.
+
+Os itens 1 e 2 da Fase 2 implementam interface/adaptadores, schema e chamada síncrona no upload. Sem alterar migrações aplicadas ou regras de autenticação/revisão. Schema JSON de visão gerado a partir do Pydantic. `VISION_MODE` independente de `DATA_MODE`; CI força modo simulado e adaptações Gemini são testadas com HTTP controlado.
+
+- `python -m pytest -q backend/tests/test_vision.py`: **38 passed in 0.22s**.
+- `python -m pytest -ra -q`: **49 passed, 16 skipped, 1 warning in 1.15s** (sem banco local).
+- `python -m pytest --collect-only -q`: **65 tests collected in 0.38s**.
+- Cenários de banco adicionais: duas variações de persistência de visão (sucesso/falha), autorização antes da chamada, JPEG sem EXIF no corpo enviado, reenvio/conflito sem outra chamada, isolamento, revisão/minuta e concorrência com uma chamada de visão.
+- Validação: quatro sinais e seis classes; confiança estrita/finita/limitada e nula em incerteza; falta de evidência, campos extras e classificações contraditórias; metadados de origem/versionamento controlados pelo servidor; HTTP, transporte, bloqueio, truncamento, JSON e versão ausente; nenhum erro externo vira simulação ou `no_signs`.
+
+Resultado remoto da revisão da Fase 2: **pendente nesta verificação inicial**, a registrar após o CI. O aviso observado é de depreciação TestClient/HTTPX, já existente.
+
+**Não executado:** chamada real Gemini, inferência em foto autorizada, avaliação independente de qualidade, medição de acurácia/latência/custo do fornecedor, adversarial real ou cruzamento ambiental. Não havia chave/modelo configurados. Os 38 testes do adaptador/contrato não são 38 avaliações de fotos. Código/configuração disponível não equivale a integração externa comprovada.
+
 ## Execução remota confirmada — 07/11/2026, 21:09 (São Paulo)
 
 - Branch publicada: `chore/fase-1`; `main` não foi alterada.

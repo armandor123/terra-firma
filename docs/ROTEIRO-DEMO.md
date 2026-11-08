@@ -2,7 +2,7 @@
 
 ## 1. Preparação
 
-Configure `.env` na raiz com senhas geradas e `DATA_MODE=demo`. Execute `docker compose up --build -d`, confira `docker compose logs migrate` e crie o representante com o comando do README. Não é necessário app mobile pronto para exercitar as APIs; use Swagger.
+Configure `.env` na raiz com senhas geradas, `DATA_MODE=demo` e `VISION_MODE=simulated` para uma demonstração sem consultas cobradas de visão. Execute `docker compose up --build -d`, confira `docker compose logs migrate` e crie o representante com o comando do README. Não é necessário app mobile pronto para exercitar as APIs; use Swagger. Para testar Gemini de verdade, configurar credencial/modelo no servidor e fotos autorizadas conforme [VISAO.md](VISAO.md); não apresentar simulação ou HTTP controlado como inferência real.
 
 ## 2. Sua entrega principal
 

@@ -1,5 +1,7 @@
 # Plano de integração da IA real e testes
 
+> Plano histórico de 06/11. Atualização da Fase 2: interface de visão, adaptadores e saída estruturada implementados no backend de forma síncrona. Gemini ainda sem chamada real/avaliação validada. Worker e cruzamento continuam pendentes. O estado implementado e as decisões atuais estão em [VISAO.md](VISAO.md), [DECISOES.md](DECISOES.md) e [VALIDACAO.md](VALIDACAO.md); o restante abaixo preserva o plano original.
+
 Atualizado em 06/11/2026. Este documento incorpora as etapas aprovadas para evolução do Terra-Firma. É um plano de execução: não declara IA integrada, modelo avaliado ou testes adicionais aprovados.
 
 ## Objetivo e ponto de partida

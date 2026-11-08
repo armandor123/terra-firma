@@ -36,7 +36,7 @@ Transações bloqueiam usuário e sessão na mesma ordem para coordenar rotaçã
 
 ## Serviço de dados
 
-Permanece independente do banco: valida coordenadas, consulta Open-Meteo e NASA FIRMS, normaliza as respostas, deduplica focos e aplica raio. Cache limitado e fontes com horários/status preservados. No modo live, falha não vira simulação. Modo demo é identificado. IA segue simulada; risco sem método validado continua nulo.
+Permanece independente do banco: valida coordenadas, consulta Open-Meteo e NASA FIRMS, normaliza as respostas, deduplica focos e aplica raio. Cache limitado e fontes com horários/status preservados. No modo live, falha não vira simulação. Modo demo é identificado. Visão agora é selecionada separadamente no backend por `VISION_MODE`, com padrão simulado e adaptador Gemini; risco continua nulo.
 
 ## Arquivos importantes
 
@@ -56,8 +56,8 @@ Permanece independente do banco: valida coordenadas, consulta Open-Meteo e NASA 
 
 ## Validação e próximos passos
 
-Os testes locais passaram; os testes com PostgreSQL não foram executados neste ambiente. Antes de integrar à equipe, rodar a suíte Docker documentada, confirmar comportamento real do banco, depois conectar o frontend e validar em Android/iOS. Leia `VALIDACAO.md` para os números e limites atuais.
+A Fase 1 teve 24 testes aprovados no CI com PostgreSQL/PostGIS real. A Fase 2 acrescenta testes de visão, e seu resultado está em `VALIDACAO.md`; chamadas Gemini controladas não comprovam inferência real. Docker continua indisponível no runtime local. Startup de desenvolvimento, frontend e Android/iOS precisam de verificação própria.
 
 ## Evolução planejada de IA
 
-A integração real será conduzida pelas quatro etapas de [PLANO-IA-E-TESTES.md](PLANO-IA-E-TESTES.md). O adaptador ficará na frente de dados/APIs, enquanto o backend cuidará das tarefas e resultados vinculados às ocorrências. Essa arquitetura futura preserva a separação dos dois projetos; ainda não há worker nem fornecedor real de visão implementado.
+O plano original em [PLANO-IA-E-TESTES.md](PLANO-IA-E-TESTES.md) propunha adaptador no serviço de dados e worker. Os itens 1–2 da Fase 2 foram implementados com adaptador síncrono no backend, que já tem a foto limpa autorizada: `VisionProvider`, `SimulatedProvider`, `GeminiProvider` e contrato Pydantic. A chamada Gemini real ainda não foi validada por falta de credencial/modelo. Worker, tarefas duráveis e cruzamento ambiental continuam futuros. Decisão e limites em [VISAO.md](VISAO.md).

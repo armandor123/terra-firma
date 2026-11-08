@@ -4,7 +4,7 @@ Base: PRD fornecido e decisões posteriores do usuário (mobile com Expo/React N
 
 | Item | Estado atual |
 |---|---|
-| PostgreSQL/PostGIS | código, esquema, migrações, Compose e testes preparados; execução real pendente neste ambiente |
+| PostgreSQL/PostGIS | suíte integral da Fase 1 executada em CI com banco real; startup do Compose de desenvolvimento ainda pendente. Evidências em VALIDACAO.md |
 | Consulta espacial | endpoint PostGIS de propriedades próximas, limitado à cooperativa |
 | Dados ambientais | serviço independente; Open-Meteo e NASA implementados, demo explícito |
 | Login/perfis | Argon2, tokens opacos, troca inicial, isolamento de cooperativas |
@@ -16,7 +16,7 @@ Base: PRD fornecido e decisões posteriores do usuário (mobile com Expo/React N
 | Fila offline no aparelho | não implementada; contrato preparado |
 | Histórico e revisão | listagem paginada, detalhes e trilha de revisão |
 | Relatórios | resumo cumulativo; filtros temporais/exportação pendentes |
-| IA | simulada/inconclusiva; integração e avaliação planejadas em PLANO-IA-E-TESTES.md |
+| IA | Visão simulada/Gemini selecionável no backend; contrato estruturado e persistência implementados. Chamada real e qualidade não validadas; veja VISAO.md |
 | Risco de incêndio | sem classificação até método/fonte validado |
 | SOS/minutas | contato/minuta sem despacho ou envio |
 | App mobile | tecnologia definida e cliente de referência; sem telas/APK/IPA |

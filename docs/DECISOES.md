@@ -41,3 +41,15 @@ Texto proposto para substituir a descrição centrada em um aplicativo mobile. R
 - Após autorização do usuário e conexão ao GitHub, publicar as Fases 0/1 em `chore/fase-1`, preservando `main`, licença e About.
 - Publicação por objetos Git via API; preservar os cinco commits lógicos e comparar cada árvore com a revisão local. SHAs de commits mudam; conteúdo não muda.
 - Registrar a execução real em `VALIDACAO.md` e nos dois READMEs. A suíte integral de banco passou; startup do Compose de desenvolvimento permanece pendente.
+
+## Fase 2 — Visão estruturada (itens 1 e 2)
+
+- Conferir Fase 1 na branch publicada `chore/fase-1`, SHA `a796bb5`: README/links, log ignorado, teste em `tests/`, licença apenas proposta e About apenas sugerido. [CI final 42428636894](https://github.com/armandor123/terra-firma/actions/runs/42428636894) confirmado com sucesso, 24 aprovados. Nenhum item solicitado da Fase 1 exige adoção de licença ou mudança de About.
+- Criar visão no backend, que já possui a foto limpa e o vínculo autorizado. Não transferir fotos privadas entre serviços para implementar apenas esta interface. HTTPX já instalado basta para o adaptador REST Gemini; não adicionar SDK sem necessidade.
+- `VISION_MODE=simulated` mantém o padrão. `gemini` exige chave e ID de modelo explícitos; não escolher um alias/modelo sem credencial e validação. Nenhuma credencial/modelo configurados nesta entrega, portanto não declarar chamada Gemini real executada.
+- Implementar saída estrita com quatro sinais, seis classificações, limitações, versão real retornada pelo provedor e versões de prompt/schema controladas pelo servidor. Confiança por sinal é estimativa do modelo, não métrica de qualidade. Sinal incerto usa confiança nula; não inventar porcentagens.
+- Ligar o adaptador ao upload após autorização/deduplicação, usando JPEG sem EXIF. Para o escopo dos dois itens, escolher execução síncrona com uma tentativa HTTP; documentar latência, lock e possibilidade de repetir cobrança após rollback/crash. Não declarar fila durável ou garantia de execução externa única.
+- Timeout/erro/bloqueio/JSON inválido mantêm relato e revisão possíveis, com `unavailable`, `simulated=false`, `inconclusive`, sinais desconhecidos e código controlado. Não usar simulação de fallback. Modo inválido ou credencial/modelo ausente falham no startup.
+- Não alterar migração aplicada nem reescrever `ai_json` de relatos antigos. Reaproveitar coluna JSONB; o novo schema vale para novas análises. Replay não reanalisa; reanálise e processamento persistente permanecem fora desta etapa.
+- Garantir `human_review_required=true`; não mudar transições de revisão. Atualizar a minuta para não chamar análise Gemini de simulada. `burned_area` é somente classe visual, não hectares ou confirmação.
+- Manter o cruzamento FIRMS/Open-Meteo pendente. Nenhum resultado de teste com transporte controlado deve ser apresentado como prova de inferência ou acurácia real. Detalhes e evidências em `VISAO.md`/`VALIDACAO.md`.

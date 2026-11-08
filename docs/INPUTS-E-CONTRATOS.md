@@ -150,7 +150,7 @@ Resposta de criação ou reenvio aceito, HTTP 201:
 
 No reenvio idêntico, devolve o mesmo ID com `replayed=true`. Mesmo UUID com outro metadata ou outros bytes de foto retorna 409. A chave é por agricultor, portanto não há conflito entre usuários diferentes. Guardar metadata e arquivo comprimido de forma estável na fila offline; não recomprimir nem recriar o UUID a cada tentativa.
 
-A deduplicação usa transação, lock consultivo e restrição única no PostgreSQL, inclusive para requisições concorrentes. Não existe worker offline no servidor: o aplicativo decide quando reenviar. O GET da ocorrência mostra `location_verified=false`, análise simulada e URL de foto autenticada.
+A deduplicação usa transação, lock consultivo e restrição única no PostgreSQL, inclusive para requisições concorrentes. Não existe worker offline no servidor: o aplicativo decide quando reenviar. O GET mostra `location_verified=false`, resultado `ai` do provedor selecionado (`VISION_MODE`, simulado por padrão) e URL de foto autenticada. A Fase 2 acrescenta quatro sinais, limitações, classificação e versões; veja [VISAO.md](VISAO.md) e [schema](../backend/vision-result.schema.json). Resultado Gemini indisponível é inconclusivo com `simulated=false`; não impede o relato nem dispensa revisão. Registros antigos mantêm seu JSON original.
 
 ### Revisão
 
