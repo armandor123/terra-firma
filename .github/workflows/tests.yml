@@ -27,6 +27,12 @@ jobs:
       - name: Build and run the full suite with PostgreSQL/PostGIS
         run: docker compose -f compose.test.yaml up --build --abort-on-container-exit --exit-code-from tests
 
+      - name: Test frontend session logic
+        run: node --test web/tests/client.test.js
+
+      - name: Demonstrate zero-to-browser demo stack with Nginx and PostGIS
+        run: python3 scripts/test_ui.py
+
       - name: Show container diagnostics on failure
         if: failure()
         run: |
