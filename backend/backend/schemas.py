@@ -1,6 +1,8 @@
 from typing import Literal
 from uuid import UUID
-from pydantic import BaseModel, ConfigDict, Field, model_validator
+from typing import Any
+from pydantic import AwareDatetime, BaseModel, ConfigDict, Field, model_validator
+from .evidence import EnvironmentSnapshot, Evidence
 
 class Strict(BaseModel):
     model_config = ConfigDict(extra='forbid',allow_inf_nan=False,str_strip_whitespace=True)
@@ -54,3 +56,39 @@ class Review(Strict):
 
 class Refresh(Strict):
     refresh_token: str = Field(min_length=20,max_length=200)
+
+
+IncidentStatus = Literal['submitted','under_review','verified','rejected','escalated']
+
+
+class ReviewRecord(BaseModel):
+    id: int
+    incident_id: str
+    reviewer_id: str
+    old_status: IncidentStatus
+    new_status: IncidentStatus
+    notes: str
+    created_at: AwareDatetime
+
+
+class IncidentDetail(BaseModel):
+    """Contrato aditivo 2.1.0; resultados antigos de IA/snapshots nulos são preservados."""
+    contract_version: Literal['2.1.0'] = '2.1.0'
+    id: str
+    property_id: str
+    farmer_id: str
+    description: str
+    latitude: float | None
+    longitude: float | None
+    location_source: Literal['gps','manual','unavailable']
+    location_authorized: bool
+    created_at: AwareDatetime
+    status: IncidentStatus
+    photo_type: str
+    client_request_id: UUID
+    ai: dict[str, Any]
+    photo_url: str
+    location_verified: Literal[False]
+    environment_snapshot: EnvironmentSnapshot | None
+    evidence: Evidence | None
+    reviews: list[ReviewRecord]

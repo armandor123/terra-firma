@@ -145,9 +145,11 @@ def test_refresh_rotation_replay_and_logout(system):
 def test_migration_reentrant(system):
     from backend.migrate import migrate
     c,url=system
+    with connect(url) as db:
+        before=db.execute('SELECT * FROM schema_migrations ORDER BY version').fetchall()
     migrate(url)
     with connect(url) as db:
-        assert db.execute('SELECT count(*) AS n FROM schema_migrations').fetchone()['n']==1
+        assert db.execute('SELECT * FROM schema_migrations ORDER BY version').fetchall()==before
 
 def test_concurrent_duplicate_upload(system):
     from concurrent.futures import ThreadPoolExecutor
@@ -240,3 +242,88 @@ def test_concurrent_retry_does_not_repeat_vision_call(system,tmp_path):
     assert all(r.status_code==201 for r in results)
     assert results[0].json()['id']==results[1].json()['id']
     assert vision.calls==1
+
+
+@pytest.mark.parametrize('case', ['matched','empty','weather_failed','hotspots_failed','no_location'])
+def test_incident_environment_snapshot_is_saved_once_and_scoped(system,tmp_path,case):
+    from datetime import datetime,timedelta,timezone
+    from backend.evidence import EvidenceSettings
+    _,path=system
+    calls=[]
+    def handler(request):
+        q=json.loads(request.content)
+        assert q=={'latitude':0.0,'longitude':179.99,'radius_km':12.0,'days':3}
+        assert request.headers['X-API-Key']=='test-key'
+        calls.append(q)
+        t=(datetime.now(timezone.utc)-timedelta(minutes=1)).isoformat()
+        common={'schema_version':'1.0','simulated':False,'status':'ok',
+                'observed_at':t,'fetched_at':t,'warnings':['Aviso original da fonte.']}
+        w={**common,'source':'Open-Meteo controlled','data':{
+            'temperature_c':30,'humidity_pct':40,'wind_kmh':10,'wind_direction_deg':90,'precipitation_mm':0}}
+        h={**common,'source':'FIRMS controlled','data':[] if case=='empty' else [
+            {'id':'near','latitude':0,'longitude':-179.99,'observed_at':t,
+             'confidence':'high','frp_mw':8,'distance_km':999}]}
+        if case=='weather_failed':w.update(status='unavailable',data=None,observed_at=None)
+        if case=='hotspots_failed':h.update(status='unavailable',data=None,observed_at=None)
+        return httpx.Response(200,json={'query':q,'weather':w,'hotspots':h})
+    c=TestClient(create_app(path,photo_dir=tmp_path/'snapshot-photos',data_key='test-key',
+        data_transport=httpx.MockTransport(handler),
+        evidence_settings=EvidenceSettings(radius_km=12,window_hours=48)))
+    coordinates={} if case=='no_location' else {'latitude':0,'longitude':179.99,
+        'location_source':'manual','location_authorized':True}
+    request_id=str(uuid.uuid4())
+    first=send(c,request_id=request_id,**coordinates)
+    assert first.status_code==201,first.text
+    iid=first.json()['id']
+    detail=c.get(f'/v1/incidents/{iid}',headers=h('farmer'))
+    assert detail.status_code==200,detail.text
+    item=detail.json()
+    assert item['contract_version']=='2.1.0' and item['status']=='submitted'
+    assert 'evidence_json' not in item and 'photo_key' not in item
+    expected={'matched':'consistent','empty':'no_nearby_hotspot'}.get(case,'unavailable')
+    assert item['evidence']['consistency']==expected
+    assert item['evidence']['parameters']=={'radius_km':12,'window_hours':48}
+    if case=='no_location':
+        assert item['environment_snapshot']['status']=='no_location'
+        assert item['evidence']['nearby_hotspots'] is None
+        assert calls==[]
+    else:
+        assert len(calls)==1
+        assert item['environment_snapshot']['query']['longitude']==179.99
+        assert item['environment_snapshot']['hotspots']['source']=='FIRMS controlled'
+        assert item['evidence']['weather']['source']=='Open-Meteo controlled'
+        if case not in ('empty','hotspots_failed'):
+            match=item['evidence']['nearby_hotspots'][0]
+            assert 2 < match['distance_km'] < 3 and match['confidence']=='high'
+            assert 0 <= match['time_difference_seconds'] <= 48*3600
+    replay=send(c,request_id=request_id,**coordinates)
+    assert replay.status_code==201 and replay.json()=={'id':iid,'replayed':True}
+    assert len(calls)==(0 if case=='no_location' else 1)
+    assert c.get(f'/v1/incidents/{iid}',headers=h('farmer')).json()['environment_snapshot']==item['environment_snapshot']
+    assert c.get(f'/v1/incidents/{iid}',headers=h('outsider')).status_code==404
+    assert c.get(f'/v1/incidents/{iid}',headers=h('other')).status_code==404
+    with connect(path) as db:
+        saved=db.execute('SELECT environment_snapshot,evidence_json FROM incidents WHERE id=%s',(iid,)).fetchone()
+        assert saved['environment_snapshot']==item['environment_snapshot']
+        assert saved['evidence_json']==item['evidence']
+
+
+def test_evidence_migration_preserves_legacy_json_and_null_snapshot(system):
+    from backend.migrate import migrate
+    from psycopg.types.json import Jsonb
+    c,path=system
+    legacy={'status':'simulated','simulated':True,'classification':'inconclusive','confidence':None}
+    with connect(path) as db:
+        # Reproduz o esquema 001 para verificar upgrade, sem modificar SQL já aplicado.
+        db.execute('ALTER TABLE incidents DROP COLUMN environment_snapshot,DROP COLUMN evidence_json')
+        db.execute("DELETE FROM schema_migrations WHERE version='002_incident_evidence.sql'")
+        db.execute('''INSERT INTO incidents(id,property_id,farmer_id,description,location_source,
+            location_authorized,created_at,status,photo_key,photo_type,ai_json,client_request_id,request_hash)
+            VALUES(%s,%s,%s,%s,%s,%s,NOW(),%s,%s,%s,%s,%s,%s)''',
+            ('legacy','p1','farmer','Old report','unavailable',False,'submitted','0'*64+'.jpg',
+             'image/jpeg',Jsonb(legacy),uuid.uuid4(),'legacy-hash'))
+    migrate(path)
+    response=c.get('/v1/incidents/legacy',headers=h('farmer'))
+    assert response.status_code==200,response.text
+    item=response.json()
+    assert item['ai']==legacy and item['environment_snapshot'] is None and item['evidence'] is None

@@ -38,6 +38,8 @@ services:
       VISION_MODE: ${VISION_MODE:-simulated}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
       GEMINI_MODEL: ${GEMINI_MODEL:-}
+      EVIDENCE_RADIUS_KM: ${EVIDENCE_RADIUS_KM:-10}
+      EVIDENCE_WINDOW_HOURS: ${EVIDENCE_WINDOW_HOURS:-24}
     volumes:
       - private_photos:/app/data/photos
     ports:

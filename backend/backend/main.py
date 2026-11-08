@@ -16,14 +16,16 @@ from fastapi import FastAPI, Depends, HTTPException, Query, UploadFile, File, Fo
 from pydantic import ValidationError
 from psycopg.types.json import Jsonb
 from starlette.concurrency import run_in_threadpool
+from anyio import from_thread
 from fastapi.responses import Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from PIL import Image, UnidentifiedImageError
 from pwdlib import PasswordHash
 from .db import connect, database_url
 from .storage import PhotoStore
-from .schemas import Login, Password, Farmer, Property, Incident, Review, Refresh
+from .schemas import Login, Password, Farmer, Property, Incident, Review, Refresh, IncidentDetail
 from .vision import VisionProvider, get_vision_provider
+from .evidence import EvidenceSettings, EnvironmentClient, build_evidence
 
 passwords = PasswordHash.recommended()
 bearer = HTTPBearer(auto_error=False)
@@ -55,13 +57,15 @@ def clean_image(raw):
         raise HTTPException(422,'Foto inválida: envie JPEG/PNG, até 3 MB e 12 megapixels')
 
 def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, photo_dir=None,
-               vision_provider: VisionProvider | None = None):
+               vision_provider: VisionProvider | None = None, evidence_settings: EvidenceSettings | None = None):
     db_url = database_url(db_url)
     store = PhotoStore(photo_dir or os.getenv('PHOTO_DIR','./data/photos'))
     data_url = (data_url or os.getenv('DATA_API_URL','http://127.0.0.1:8001')).rstrip('/')
     data_key = data_key or os.getenv('DATA_API_KEY','')
     vision = vision_provider if vision_provider is not None else get_vision_provider()
-    app = FastAPI(title='Terra-Firma — Backend',version='2.0.0')
+    evidence_config = evidence_settings if evidence_settings is not None else EvidenceSettings.from_env()
+    environment_client = EnvironmentClient(data_url, data_key, evidence_config, data_transport)
+    app = FastAPI(title='Terra-Firma — Backend',version='2.1.0')
     dummy_hash = passwords.hash(secrets.token_urlsafe(24))
     login_attempts = {}
 
@@ -120,6 +124,7 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
         row.pop('photo_key',None)
         row.pop('request_hash',None)
         row['ai'] = row.pop('ai_json')
+        row['evidence'] = row.pop('evidence_json',None)
         row['photo_url'] = f"/v1/incidents/{row['id']}/photo"
         row['location_verified'] = False
         return row
@@ -269,6 +274,7 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
 
     @app.post('/v1/incidents',status_code=201)
     def add_incident(metadata: str = Form(...,max_length=10000),photo: UploadFile = File(...),user=Depends(ready)):
+        received_at = datetime.now(timezone.utc)
         if user['role'] != 'farmer':
             raise HTTPException(403,'Envio disponível para agricultores')
         try:
@@ -294,13 +300,17 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
             photo_key=store.put(image)
             # Após autorização e deduplicação; somente JPEG reencodificado sem EXIF.
             # No MVP esta chamada é síncrona e mantém o lock até concluir a transação.
-            ai=vision.analyze(image).model_dump(mode='json')
+            analysis=vision.analyze(image)
+            snapshot=from_thread.run(environment_client.capture,body.latitude,body.longitude)
+            evidence=build_evidence(snapshot,received_at,analysis,evidence_config)
             db.execute("""INSERT INTO incidents(id,property_id,farmer_id,description,latitude,longitude,
-                location_source,location_authorized,created_at,status,photo_key,photo_type,ai_json,client_request_id,request_hash)
-                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
+                location_source,location_authorized,created_at,status,photo_key,photo_type,ai_json,client_request_id,request_hash,
+                environment_snapshot,evidence_json)
+                VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
                 (incident_id,body.property_id,user['id'],body.description,body.latitude,body.longitude,
-                 body.location_source,body.location_authorized,timestamp(),'submitted',photo_key,'image/jpeg',Jsonb(ai),
-                 body.client_request_id,fingerprint))
+                 body.location_source,body.location_authorized,received_at,'submitted',photo_key,'image/jpeg',
+                 Jsonb(analysis.model_dump(mode='json')),body.client_request_id,fingerprint,
+                 Jsonb(snapshot.model_dump(mode='json')),Jsonb(evidence.model_dump(mode='json'))))
         return {'id':incident_id,'replayed':False}
 
     @app.get('/v1/incidents')
@@ -311,7 +321,7 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
                 (user['coop_id'],user['role'],user['id'],limit,offset))
             return [public_incident(r) for r in rows]
 
-    @app.get('/v1/incidents/{incident_id}')
+    @app.get('/v1/incidents/{incident_id}',response_model=IncidentDetail)
     def incident(incident_id: str,user=Depends(ready)):
         with connect(db_url) as db:
             result = public_incident(incident_access(db,incident_id,user))
