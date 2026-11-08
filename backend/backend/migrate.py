@@ -24,3 +24,6 @@ def migrate(url=None):
 
 if __name__=='__main__':
     print(migrate())
+    from .provision import provision
+    provision()
+    print('Identidade de aplicação provisionada; credenciais não exibidas.')

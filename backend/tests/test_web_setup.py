@@ -11,7 +11,8 @@ def test_private_configuration_is_generated_without_echo_or_overwrite(tmp_path):
     assert result.returncode==0
     values=dict(line.split('=',1) for line in target.read_text().splitlines() if line and not line.startswith('#'))
     assert values['DATA_MODE']=='demo' and values['VISION_MODE']=='simulated'
-    assert values['DATA_API_KEY']!=values['POSTGRES_PASSWORD']
+    assert len({values[k] for k in ('DATA_API_KEY','POSTGRES_PASSWORD','POSTGRES_APP_PASSWORD')})==3
+    assert values['POSTGRES_APP_USER']!=values['POSTGRES_USER']
     assert len(values['DATA_API_KEY'])>=32
     assert values['DATA_API_KEY'] not in result.stdout
     if os.name=='posix':assert target.stat().st_mode & 0o777==0o600

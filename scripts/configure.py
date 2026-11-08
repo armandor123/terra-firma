@@ -10,6 +10,7 @@ def configure(path: Path, web_port: int = 8080):
         raise ValueError('Porta inválida')
     values = {
         'POSTGRES_USER':'terra_firma', 'POSTGRES_DB':'terra_firma',
+        'POSTGRES_APP_USER':'terra_firma_app','POSTGRES_APP_PASSWORD':secrets.token_urlsafe(32),
         'POSTGRES_PASSWORD':secrets.token_urlsafe(32), 'DATA_API_KEY':secrets.token_urlsafe(32),
         'DATA_MODE':'demo', 'FIRMS_MAP_KEY':'', 'VISION_MODE':'simulated',
         'GEMINI_API_KEY':'', 'GEMINI_MODEL':'', 'EVIDENCE_RADIUS_KM':'10',

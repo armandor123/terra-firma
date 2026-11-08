@@ -17,6 +17,8 @@ services:
     command: ["python", "-m", "backend.migrate"]
     environment:
       DATABASE_URL: postgresql://${POSTGRES_USER:-terra_firma}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-terra_firma}
+      APP_DATABASE_USER: ${POSTGRES_APP_USER:-terra_firma_app}
+      APP_DATABASE_PASSWORD: ${POSTGRES_APP_PASSWORD:?Defina POSTGRES_APP_PASSWORD no .env}
     depends_on:
       db:
         condition: service_healthy
@@ -33,7 +35,7 @@ services:
     environment:
       DATA_API_KEY: ${DATA_API_KEY:?Defina DATA_API_KEY no .env}
       DATA_API_URL: http://dados:8001
-      DATABASE_URL: postgresql://${POSTGRES_USER:-terra_firma}:${POSTGRES_PASSWORD:?Defina POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-terra_firma}
+      DATABASE_URL: postgresql://${POSTGRES_APP_USER:-terra_firma_app}:${POSTGRES_APP_PASSWORD:?Defina POSTGRES_APP_PASSWORD}@db:5432/${POSTGRES_DB:-terra_firma}
       PHOTO_DIR: /app/data/photos
       VISION_MODE: ${VISION_MODE:-simulated}
       GEMINI_API_KEY: ${GEMINI_API_KEY:-}
