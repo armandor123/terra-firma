@@ -1,6 +1,6 @@
 # Terra-Firma
 
-**MVP de relatos com fotos por agricultores e revisão por cooperativas, com conectores ambientais e adaptador Gemini selecionável. Avaliação em fotos reais e cruzamento automático com satélite/clima permanecem pendentes.**
+**MVP de relatos com fotos por agricultores e revisão por cooperativas, com conectores ambientais e adaptador Gemini selecionável. Snapshot ambiental por incidente e cruzamento espacial/temporal implementados; avaliação em fotos reais e validação FIRMS real permanecem pendentes.**
 
 [English](README.md) · **Português (Brasil)** · [Repositório](https://github.com/armandor123/terra-firma)
 
@@ -8,11 +8,11 @@ Projeto do **Grupo 13**, desenvolvido para o desafio **Reboot the Earth 2026**. 
 
 A ideia central é permitir que **a IA analise fotos enviadas pelo produtor para identificar indícios de focos de incêndio, fumaça, mata seca e vegetação queimada**, cruzando essas evidências com **focos de calor de satélite e dados meteorológicos**. A cooperativa recebe informações organizadas para revisar ocorrências e coordenar encaminhamentos.
 
-> **Estado do projeto:** MVP em desenvolvimento. O backend oficial e o serviço de dados ambientais estão descritos nos READMEs técnicos anteriores. A apresentação propõe interface web em HTML/CSS/JavaScript e um processador de análise com Google Gemini. **A Fase 2 implementa visão simulada/Gemini selecionável e resultado estruturado validado. O padrão continua simulado. Uma chamada Gemini real com imagem sintética funcionou; a qualidade visual continua sem avaliação. O cruzamento automático ambiental não está implementado.** O índice de risco também não é calculado. O histórico contém um cliente Expo de referência para possível integração mobile.
+> **Estado do projeto:** MVP em desenvolvimento. O backend oficial e o serviço de dados ambientais estão descritos nos READMEs técnicos anteriores. A apresentação propõe interface web em HTML/CSS/JavaScript e um processador de análise com Google Gemini. **A Fase 2 implementa visão simulada/Gemini selecionável e resultado estruturado validado. O padrão continua simulado. Uma chamada Gemini real com imagem sintética funcionou; a qualidade visual continua sem avaliação. A Fase 3 adiciona snapshot ambiental por incidente e cruzamento espacial/temporal determinístico, com revisão humana.** O índice de risco também não é calculado. O histórico contém um cliente Expo de referência para possível integração mobile.
 
 > **Auditoria da Fase 0 — 07/11/2026:** Código inspecionado em `1825555f9a714ffab131a3e7796f4223bb753944`. A suíte local retornou **11 aprovados, 13 ignorados e 1 aviso**. Os dois comandos Compose foram tentados, mas Docker não está disponível; os cenários PostgreSQL/PostGIS continuam sem execução nesta auditoria. **Fase 0 bloqueada até a validação integral do ambiente e do banco.** Veja [auditoria e evidências](docs/AUDITORIA.md) e [decisões](docs/DECISOES.md). Nenhum código de aplicação foi alterado.
 
-> **Atualização de CI — 07/11/2026:** [Suíte completa com PostGIS aprovada](https://github.com/armandor123/terra-firma/actions/runs/42428442702): **24 testes aprovados, nenhum ignorado**, com um aviso de depreciação do TestClient. Mudanças publicadas em `chore/fase-1`; inicialização do ambiente de desenvolvimento ainda não verificada. Naquela revisão a IA era simulada. A Fase 2 adiciona visão Gemini selecionável; o cruzamento automático continua não implementado.
+> **Atualização de CI — 07/11/2026:** [Suíte completa com PostGIS aprovada](https://github.com/armandor123/terra-firma/actions/runs/42428442702): **24 testes aprovados, nenhum ignorado**, com um aviso de depreciação do TestClient. Mudanças publicadas em `chore/fase-1`; inicialização do ambiente de desenvolvimento ainda não verificada. Naquela revisão a IA era simulada. A Fase 2 adiciona visão Gemini selecionável; a Fase 3 acrescenta posteriormente snapshot ambiental e cruzamento determinístico.
 
 > **Fase 2:** `VisionProvider`, adaptadores simulated/Gemini e saída validada por sinal estão implementados no envio. [CI aprovou os 65 testes](https://github.com/armandor123/terra-firma/actions/runs/42429976440). O padrão continua simulado. Chamada Gemini real validada com imagem sintética; qualidade em fotos reais não avaliada e nenhuma acurácia alegada.
 
@@ -29,6 +29,7 @@ A ideia central é permitir que **a IA analise fotos enviadas pelo produtor para
 - [Fotos, localização e reenvios](#fotos-localização-e-reenvios)
 - [Dados ambientais](#dados-ambientais)
 - [Inteligência artificial](#inteligência-artificial)
+- [Cruzamento de evidências](#cruzamento-de-evidências)
 - [Persistência e operação](#persistência-e-operação)
 - [Integração da interface](#integração-da-interface)
 - [Testes e validação](#testes-e-validação)
@@ -55,7 +56,7 @@ O Terra-Firma propõe reunir a foto do local, a localização autorizada, os ind
 | Open-Meteo | Acrescentar temperatura, umidade, vento e precipitação ao contexto |
 | Revisão da cooperativa | Avaliar as evidências reunidas, registrar a decisão e preparar encaminhamentos |
 
-O cruzamento pretendido verifica se há focos de calor próximos e temporalmente compatíveis com o relato e apresenta o clima como contexto complementar. A foto pode mostrar algo que o satélite não registrou; a ausência de foco próximo não deve invalidar o relato. A implementação e a validação desse cruzamento são etapas futuras.
+A Fase 3 verifica focos próximos dentro de raio/janela temporal retroativa configuráveis e preserva o clima como contexto complementar. A foto pode mostrar algo que o satélite não registrou; a ausência de foco próximo não deve invalidar o relato. Snapshots e regras determinísticas estão implementados; validação FIRMS real/da associação em campo permanece pendente.
 
 ### Público e jornada proposta
 
@@ -70,7 +71,7 @@ O cruzamento pretendido verifica se há focos de calor próximos e temporalmente
 4. O processador cruza os indícios com focos de calor próximos e informações meteorológicas, preservando origem e horário dos dados.
 5. A cooperativa realiza a revisão humana e registra o encaminhamento da ocorrência.
 
-O passo 3 tem implementação configurável, testada com HTTP controlado; uma chamada real com imagem sintética já passou, mas a validação com fotos reais continua pendente. O passo 4 continua futuro: o serviço ambiental fornece contexto separadamente. A plataforma apoia decisões e não substitui serviços de emergência ou alertas oficiais. O MVP não envia comunicações automaticamente às autoridades.
+O passo 3 tem implementação configurável, testada com HTTP controlado; uma chamada real com imagem sintética já passou, mas a validação com fotos reais continua pendente. O passo 4 está implementado para novos incidentes com coordenadas: o contexto é consultado, preservado e cruzado antes de persistir. Sem localização ou fontes utilizáveis, a evidência permanece indisponível. A plataforma apoia decisões e não substitui serviços de emergência ou alertas oficiais. O MVP não envia comunicações automaticamente às autoridades.
 
 O combate ao desmatamento é a finalidade do projeto. O escopo atual não inclui detecção geral de corte de árvores, medição de desmatamento ou cálculo de hectares queimados por fotografia.
 
@@ -92,7 +93,7 @@ Os estados abaixo foram conferidos contra o código na Fase 0. Os 13 cenários d
 | Meteorologia e satélite | Conectores Open-Meteo e NASA FIRMS; modo demo explícito |
 | IA de imagens | VisionProvider com implementações simulated/Gemini; chamada real sintética validada; avaliação em fotos reais pendente |
 | Fogo, fumaça, mata seca e vegetação queimada | Saída estruturada por sinal implementada; qualidade não medida em fotos reais |
-| Cruzamento automático entre imagem, satélite e clima | Proposto; não implementado no fluxo atual |
+| Cruzamento de evidências | Implementado: snapshot por incidente, filtro espacial/temporal e clima; não confirma incêndio nem calcula risco |
 | Interface web HTML/CSS/JavaScript | Proposta; sem implementação no checkout auditado |
 | Índice de risco de incêndio | Não implementado; retorna valor nulo |
 | SOS e comunicação externa | Contato e minuta; sem despacho ou envio automático |
@@ -122,7 +123,7 @@ flowchart TD
 | Banco | PostgreSQL 16 e PostGIS 3.7, conforme a imagem do Compose |
 | Arquivos | Volume privado; o banco armazena somente a referência da fotografia |
 | Interface proposta | HTML, CSS e JavaScript; navegador no computador ou celular; Nginx para arquivos e proxy na apresentação |
-| Processamento de imagens | Adaptador síncrono no backend; Gemini opcional, worker persistente e cruzamento pendentes |
+| Processamento de imagem/contexto | Visão síncrona e snapshot/cruzamento por incidente; worker persistente pendente |
 | Referência mobile | React Native, Expo e TypeScript; cliente de integração anterior, sem aplicativo completo |
 | Execução e testes | Docker Compose e pytest |
 
@@ -140,10 +141,11 @@ A interface acessa o backend. O backend autoriza o acesso à propriedade e consu
 | `backend/backend/schemas.py` | Validação das entradas |
 | `backend/backend/vision.py`, `vision_models.py` | Interface, provedores de visão e saída validada |
 | `backend/vision-result.schema.json` | JSON schema do novo resultado visual |
+| `backend/backend/evidence.py`, `backend/backend/migrations/002_incident_evidence.sql` | Validação de contexto, cruzamento e persistência de snapshot |
 | `backend/backend/db.py`, `storage.py` | Conexão ao banco e armazenamento privado |
 | `backend/backend/migrate.py`, `migrations/` | Migrador e SQL versionado |
 | `backend/backend/bootstrap.py` | Criação do primeiro representante da cooperativa |
-| `backend/openapi.json` | Contrato do backend 2.0.0 |
+| `backend/openapi.json` | Contrato backend 2.1.0, detalhe de incidente tipado |
 | `backend/incident-metadata.schema.json` | Schema do JSON de metadata do upload |
 | `backend/examples/expo-client.ts` | Cliente de integração de referência |
 | `dados-api/dados/` | Aplicação, modelos e provedores ambientais |
@@ -236,6 +238,8 @@ O Python não carrega `.env` automaticamente; exporte as variáveis no terminal.
 | `VISION_MODE` | Provedor de imagem, independente de DATA_MODE | `simulated` (padrão) ou `gemini` |
 | `GEMINI_API_KEY` | Credencial de visão, somente no backend | Obrigatória no modo gemini |
 | `GEMINI_MODEL` | ID de modelo com visão e JSON estruturado | Obrigatório no modo gemini; sem padrão presumido |
+| `EVIDENCE_RADIUS_KM` | Raio em torno da coordenada do incidente | 10 km; permitido 1–50 |
+| `EVIDENCE_WINDOW_HOURS` | Janela retroativa inclusiva desde o recebimento | 24 h; permitido 1–96 |
 
 Não envie `.env`, tokens, chaves, bancos ou fotos privadas ao GitHub. Em uma instalação existente, preserve nomes reais do banco/usuário e o projeto Compose: mudar essas variáveis não renomeia um banco já inicializado.
 
@@ -441,7 +445,21 @@ Autorização e idempotência são verificadas antes do modelo. Só são enviado
 
 O processamento é síncrono na requisição/transação atual, com timeout HTTP de 20 segundos por operação (conexão: 5 segundos), uma tentativa e nenhum retry automático. Isso acrescenta latência e mantém o lock do banco. Falha do processo após consultar o provedor e antes do commit pode gerar outra chamada cobrada no reenvio; não existe garantia de execução externa exatamente uma vez nem fila durável. O prompt trata texto na foto como conteúdo não confiável; é uma precaução, não uma garantia medida contra injeção de instruções.
 
-O upload ainda não chama o serviço ambiental. `GET /v1/properties/{id}/environment` consulta o contexto da propriedade separadamente. Snapshot ambiental, horário de captura, cruzamento imagem × FIRMS × clima e índice de risco continuam ausentes. Foto isolada não comprova localização, umidade ou hectares queimados. Ausência de sinais/focos não comprova segurança. Próximos passos: validação autorizada com fotos reais/de ponta a ponta, avaliação independente com imagens rotuladas e depois worker/cruzamento planejados. Nenhuma métrica de acurácia de IA foi medida.
+A Fase 3 consulta contexto ambiental no envio de novos incidentes com coordenadas, persiste o snapshot e cruza focos em espaço/tempo, preservando clima e análise visual. `GET /v1/properties/{id}/environment` continua como consulta atual separada da propriedade. Horário de captura, worker persistente e índice de risco continuam ausentes. Foto isolada não comprova localização, umidade ou hectares queimados. Ausência de sinais/focos não comprova segurança. Próximos passos: validação autorizada com fotos reais/FIRMS real, avaliação independente com imagens rotuladas e processamento persistente em worker. Nenhuma métrica de acurácia de IA foi medida.
+
+## Cruzamento de evidências
+
+Novos incidentes com coordenadas autorizadas consultam dados-api pelo ponto do incidente e persistem `environment_snapshot` e `evidence`, com fontes, horários de observação/coleta, avisos e indicadores de simulação. Padrões: **10 km / 24 horas anteriores ao recebimento pelo servidor**, inclusivos. O backend solicita 2 dias ao provedor no padrão (margem diária) e aplica a janela exata localmente. São heurísticas de contexto do MVP, não limiares de risco calibrados; veja [decisões](docs/DECISOES.md).
+
+| consistency | Significado |
+|---|---|
+| `consistent` | Ambas as fontes ambientais ok e pelo menos um foco espacial/temporalmente compatível |
+| `no_nearby_hotspot` | Ambas ok, sem foco retornado compatível; o relato continua válido para revisão |
+| `unavailable` | Sem localização, fonte stale/indisponível ou contexto inválido; preservar evidência parcial, nunca interpretar como sem risco |
+
+Distâncias dos focos são recalculadas; cada correspondência preserva fonte, horário, confiança categórica e diferença temporal. O clima conserva envelope e diferença temporal assinada. `consistent` não afirma concordância com a imagem nem confirma incêndio. Divergências visuais geram avisos para revisão humana. A simulação permanece por fonte e no agregado. Lista vazia difere de null/indisponível. Não se substitui localização ausente do relato pela propriedade.
+
+`GET /v1/incidents/{id}` retorna o contrato autorizado e tipado **2.1.0**, com snapshot persistido, evidência, IA e revisões. Aplicar migração **002** antes de iniciar o backend atualizado. Incidentes antigos mantêm snapshot/evidência nulos; replay e GET não buscam contexto novo. O cálculo de distância funciona no antimeridiano, mas caixas FIRMS que o cruzam continuam explicitamente indisponíveis, preservando o clima possível. Regras, parâmetros, migração e limites: [docs/CRUZAMENTO.md](docs/CRUZAMENTO.md).
 
 ## Persistência e operação
 
@@ -472,6 +490,8 @@ Para celular na mesma rede, configure `BACKEND_BIND=0.0.0.0` em rede confiável,
 Não inclua `DATA_API_KEY`, `FIRMS_MAP_KEY`, `GEMINI_API_KEY` ou `DATABASE_URL` no app; variáveis `EXPO_PUBLIC_*` são públicas. A URL de foto exige Bearer. Veja [docs/MOBILE.md](docs/MOBILE.md).
 
 ## Testes e validação
+
+**Fase 3:** [CI com PostGIS aprovou 102 testes, nenhum ignorado e 1 aviso em 15,14 s](https://github.com/armandor123/terra-firma/actions/runs/42433174536), commit testado `48c9e5536dc153e0c894bad75442cfca1d6f82d2`. Inclui migração, snapshots persistidos/parciais, reenvios, autorização e bordas do cruzamento. Provedores são controlados/demo nessa execução; FIRMS real e acurácia da associação em campo continuam sem validação.
 
 **CI da Fase 2: 65 aprovados, nenhum ignorado e 1 aviso em 10,57 s**, com PostgreSQL/PostGIS. [Execução e logs](https://github.com/armandor123/terra-firma/actions/runs/42429976440), commit testado `01ae50dab2e1649a0317bc1069e12b6558c3c6ec`. A verificação local teve 49 aprovados/16 ignorados sem banco; os 16 foram posteriormente executados no CI. Os testes Gemini usam HTTP controlado, sem inferência real nem métricas de qualidade.
 
@@ -530,7 +550,7 @@ O ZIP de identidade contém logos SVG/PNG, 30 ícones, fotos/recortes, paleta, t
 | 1 | Executar e registrar os testes PostgreSQL/PostGIS e corrigir falhas |
 | 2 | Implementar a interface web da apresentação, com foto, localização e revisão |
 | 3 | Validar conectores reais, disponibilidade e apresentação dos dados |
-| 4 | Validar Gemini com fotos autorizadas, depois implementar cruzamento com satélite/clima e manter revisão humana |
+| 4 | Validar Gemini/cruzamento com fotos reais autorizadas e FIRMS real; manter revisão humana |
 | 5 | Adicionar filtros/exportação, notificações revisadas e métricas de uso |
 | 6 | Avaliar polígonos, fontes históricas e métodos validados de risco/propagação |
 

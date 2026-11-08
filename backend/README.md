@@ -1,6 +1,6 @@
 # Backend oficial — PostgreSQL/PostGIS e mobile
 
-Aplicação FastAPI independente, versão 2.0.0. Para executar junto do projeto de dados, prefira o Compose da raiz. Ele inicia PostgreSQL, aplica migrações e só depois inicia a API.
+Aplicação FastAPI independente, contrato 2.1.0. Para executar junto do projeto de dados, prefira o Compose da raiz. Ele inicia PostgreSQL, aplica migrações e só depois inicia a API. A migração nova 002 adiciona snapshots/evidências por incidente, preservando registros históricos como null.
 
 ## Execução sem Docker
 
@@ -73,7 +73,11 @@ Execute esse comando na raiz. Cada cenário cria/remove somente seu próprio sch
 
 O upload seleciona `VisionProvider` por `VISION_MODE=simulated|gemini`. O padrão é simulado. Gemini exige `GEMINI_API_KEY` e `GEMINI_MODEL` somente no servidor; sem ambos, o modo gemini não inicializa. O JPEG reencodificado sem EXIF é enviado após autorização/deduplicação; a saída Pydantic é salva em `ai_json`, sem modificar o status de revisão humana. Uma chamada Gemini real com imagem sintética foi validada; não houve avaliação de qualidade nem ocorrência real persistida de ponta a ponta. Veja a evidência em docs/vision-live-check.json.
 
-Veja [`docs/VISAO.md`](../docs/VISAO.md) para contrato, campos de confiança, instruções de configuração, comportamento indisponível/inconclusivo e limitações da chamada síncrona. O schema está em [`vision-result.schema.json`](vision-result.schema.json). Credenciais não devem ir ao app. `DATA_MODE` não seleciona visão. Não há fila/worker/reanálise ou cruzamento ambiental automático.
+Veja [`docs/VISAO.md`](../docs/VISAO.md) para contrato, campos de confiança, instruções de configuração, comportamento indisponível/inconclusivo e limitações da chamada síncrona. O schema está em [`vision-result.schema.json`](vision-result.schema.json). Credenciais não devem ir ao app. `DATA_MODE` não seleciona visão. Não há fila/worker/reanálise.
+
+## Contexto por incidente — Fase 3
+
+O upload com coordenadas consulta dados-api, salva `environment_snapshot` e `evidence` na ocorrência e expõe ambos no GET de detalhe tipado (`contract_version=2.1.0`). Padrões: `EVIDENCE_RADIUS_KM=10`, `EVIDENCE_WINDOW_HOURS=24` (faixas 1–50 km/1–96 h). A consulta diária usa um dia de margem; o filtro final é espacial e temporal inclusivo, anterior ao recebimento no servidor. Sem coordenadas, não se consulta nem usa o ponto da propriedade; o relato continua permitido. Falhas preservam evidência parcial e `consistency=unavailable`, sem gerar risco baixo. Replay/GET não repetem consultas. Detalhes, migração e limites: [`docs/CRUZAMENTO.md`](../docs/CRUZAMENTO.md).
 
 ## Limites operacionais
 

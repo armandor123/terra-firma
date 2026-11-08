@@ -54,7 +54,7 @@ O prompt instrui a ignorar comandos dentro da imagem; os testes verificam instru
 
 O adaptador/API foi verificado com uma imagem sintética; falta validar o fluxo completo com foto autorizada e ocorrência real persistida, confirmar versão/status e registrar evidência sem credencial ou imagem privada. A tentativa anterior com gemini-2.5-flash retornou 404; o operador escolheu explicitamente gemini-3.8-flash após conferir sua disponibilidade. Isso não cria fallback automático no código e não comprova qualidade. Avaliação independente rotulada continua necessária para publicar métricas.
 
-Não há cruzamento automático com FIRMS/clima, snapshot ambiental, worker, índice de risco ou confirmação de incêndio pela IA. Clima/focos continuam consultados separadamente por propriedade.
+A Fase 3 acrescenta snapshot ambiental por incidente e cruzamento espacial/temporal determinístico, preservando clima e classe visual. A consulta atual por propriedade também permanece. Veja [CRUZAMENTO.md](CRUZAMENTO.md). Não há worker, índice de risco ou confirmação de incêndio pela IA; a validação conjunta em campo com fontes reais continua pendente.
 
 ## Referências de implementação
 

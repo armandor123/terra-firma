@@ -16,7 +16,8 @@ Base: PRD fornecido e decisões posteriores do usuário (mobile com Expo/React N
 | Fila offline no aparelho | não implementada; contrato preparado |
 | Histórico e revisão | listagem paginada, detalhes e trilha de revisão |
 | Relatórios | resumo cumulativo; filtros temporais/exportação pendentes |
-| IA | Visão simulada/Gemini selecionável no backend; contrato estruturado e persistência implementados. Chamada real e qualidade não validadas; veja VISAO.md |
+| IA | Visão simulada/Gemini selecionável e saída estruturada; uma chamada real sintética validada, sem avaliação de qualidade em campo; veja VISAO.md |
+| Cruzamento | Snapshot por incidente e regras espaciais/temporais implementados; fontes parciais/simulação preservadas, revisão humana obrigatória; veja CRUZAMENTO.md |
 | Risco de incêndio | sem classificação até método/fonte validado |
 | SOS/minutas | contato/minuta sem despacho ou envio |
 | App mobile | tecnologia definida e cliente de referência; sem telas/APK/IPA |
@@ -30,12 +31,12 @@ As quatro etapas de IA e validação estão detalhadas em [PLANO-IA-E-TESTES.md]
 1. Executar os testes atuais com PostgreSQL/PostGIS e corrigir falhas.
 2. Reunir imagens autorizadas, definir rotulagem e reservar avaliação independente.
 3. Escolher fornecedor/modelo, orçamento e credencial de servidor.
-4. Implementar adaptador de IA, tarefas persistentes e contrato de resultado.
+4. Evoluir adaptadores já implementados para tarefas persistentes e validar fluxo em campo.
 5. Executar testes de integração e qualidade; registrar métricas e limites.
 6. Conectar o app Expo e validar câmera/GPS, offline, sessão e estados de análise.
 7. Atualizar documentação/PRD e avaliar liberação do piloto com revisão humana.
 
-NASA real, fila offline, snapshots ambientais, histórico e push permanecem frentes adicionais. A documentação do plano não altera o estado de implementação nem comprova novos testes.
+NASA real, fila offline, histórico ambiental longitudinal e push permanecem frentes adicionais. Snapshots por incidente estão implementados; evidências de testes ficam em VALIDACAO.md.
 
 ## Produção
 

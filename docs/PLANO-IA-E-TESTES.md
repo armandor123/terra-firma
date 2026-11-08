@@ -1,6 +1,6 @@
 # Plano de integração da IA real e testes
 
-> Plano histórico de 06/11. Atualização da Fase 2: interface de visão, adaptadores e saída estruturada implementados no backend de forma síncrona. Chamada Gemini real posteriormente validada com imagem sintética (vision-live-check.json); avaliação de qualidade em fotos reais continua pendente. Worker e cruzamento continuam pendentes. O estado implementado e as decisões atuais estão em [VISAO.md](VISAO.md), [DECISOES.md](DECISOES.md) e [VALIDACAO.md](VALIDACAO.md); o restante abaixo preserva o plano original.
+> Plano histórico de 06/11. A Fase 2 implementa visão síncrona, adaptadores e saída estruturada; uma chamada Gemini real sintética foi validada (vision-live-check.json). A Fase 3 acrescenta snapshot/cruzamento determinístico por incidente em [CRUZAMENTO.md](CRUZAMENTO.md). Qualidade em fotos reais, validação FIRMS em campo e worker continuam pendentes. O estado implementado e as decisões atuais estão em [VISAO.md](VISAO.md), [DECISOES.md](DECISOES.md) e [VALIDACAO.md](VALIDACAO.md); o restante abaixo preserva o plano original.
 
 Atualizado em 06/11/2026. Este documento incorpora as etapas aprovadas para evolução do Terra-Firma. É um plano de execução: não declara IA integrada, modelo avaliado ou testes adicionais aprovados.
 

@@ -1,7 +1,7 @@
 
 # Terra-Firma
 
-**An MVP for farmer photo reports and cooperative review, with environmental connectors and a selectable Gemini vision adapter. Real-photo evaluation and automatic satellite/weather cross-referencing remain pending.**
+**An MVP for farmer photo reports and cooperative review, with environmental connectors and a selectable Gemini vision adapter. Incident environmental snapshots and spatial/temporal correlation are implemented; real-photo evaluation and live FIRMS validation remain pending.**
 
 **English** · [Português (Brasil)](README.pt-BR.md) · [Repository](https://github.com/armandor123/terra-firma)
 
@@ -9,11 +9,11 @@ A **Group 13** project developed for **Reboot the Earth 2026**. Terra-Firma aims
 
 The central idea is for **AI to analyze photographs submitted by farmers for signs of fire, smoke, dry vegetation and burned vegetation**, then cross-reference those findings with **satellite thermal hotspots and weather data**. Cooperatives receive organized evidence to review incidents and coordinate follow-up.
 
-> **Project status:** MVP under development. The previous technical READMEs describe the official backend and environmental data service. The presentation proposes an HTML/CSS/JavaScript web interface and an analysis worker using Google Gemini. **Phase 2 implements selectable simulated/Gemini vision and a validated structured result. Default mode remains simulated. A live Gemini call with a synthetic fixture has succeeded; visual quality remains unevaluated. Automatic environmental cross-referencing is not implemented.** A wildfire risk index is not calculated. Earlier work includes an Expo reference client for potential mobile integration.
+> **Project status:** MVP under development. The previous technical READMEs describe the official backend and environmental data service. The presentation proposes an HTML/CSS/JavaScript web interface and an analysis worker using Google Gemini. **Phase 2 implements selectable simulated/Gemini vision and a validated structured result. Default mode remains simulated. A live Gemini call with a synthetic fixture has succeeded; visual quality remains unevaluated. Phase 3 adds incident environmental snapshots and deterministic spatial/temporal correlation, with human review.** A wildfire risk index is not calculated. Earlier work includes an Expo reference client for potential mobile integration.
 
 > **Phase 0 audit — November 7, 2026:** Source inspected at `1825555f9a714ffab131a3e7796f4223bb753944`. The local suite returned **11 passed, 13 skipped, 1 warning**. Both Compose commands were attempted but Docker is unavailable; PostgreSQL/PostGIS scenarios remain unexecuted in this audit. **Phase 0 is blocked pending full environment and database validation.** See [audit and evidence](docs/AUDITORIA.md) and [decisions](docs/DECISOES.md). No application code changed.
 
-> **CI update — November 7, 2026:** [Full PostGIS suite passed](https://github.com/armandor123/terra-firma/actions/runs/42428442702): **24 tests passed, none skipped**, with one TestClient deprecation warning. Changes are published on `chore/fase-1`; development-stack startup remains unverified. At that revision AI was simulated. Phase 2 now adds selectable Gemini vision; automatic evidence cross-referencing remains unimplemented.
+> **CI update — November 7, 2026:** [Full PostGIS suite passed](https://github.com/armandor123/terra-firma/actions/runs/42428442702): **24 tests passed, none skipped**, with one TestClient deprecation warning. Changes are published on `chore/fase-1`; development-stack startup remains unverified. At that revision AI was simulated. Phase 2 now adds selectable Gemini vision; Phase 3 subsequently adds environmental snapshots and deterministic correlation.
 
 > **Phase 2:** `VisionProvider`, simulated/Gemini adapters and validated per-signal output are implemented in the upload flow. [CI passed all 65 tests](https://github.com/armandor123/terra-firma/actions/runs/42429976440). Default remains simulated. A live Gemini call with a synthetic fixture passed; real-photo quality remains unevaluated and no accuracy claim is made.
 
@@ -30,6 +30,7 @@ The central idea is for **AI to analyze photographs submitted by farmers for sig
 - [Photos, location and retries](#photos-location-and-retries)
 - [Environmental data](#environmental-data)
 - [Artificial intelligence](#artificial-intelligence)
+- [Evidence correlation](#evidence-correlation)
 - [Persistence and operations](#persistence-and-operations)
 - [Interface integration](#interface-integration)
 - [Testing and validation](#testing-and-validation)
@@ -56,7 +57,7 @@ Terra-Firma proposes bringing the site photograph, authorized location, AI obser
 | Open-Meteo | Add temperature, humidity, wind and precipitation as context |
 | Cooperative review | Assess the combined evidence, record a decision and prepare follow-up |
 
-The proposed cross-referencing checks for nearby hotspots with observation times compatible with the report and presents weather as additional context. A photograph may capture something the satellite did not record; the absence of a nearby hotspot must not invalidate the report. Implementing and validating this cross-referencing remains future work.
+Phase 3 checks for nearby hotspots within a configurable radius and backward time window, and preserves weather as additional context. A photograph may capture something the satellite did not record; the absence of a nearby hotspot must not invalidate the report. Snapshots and deterministic rules are implemented; live FIRMS/field-association validation remains pending.
 
 ### Users and proposed journey
 
@@ -71,7 +72,7 @@ The proposed cross-referencing checks for nearby hotspots with observation times
 4. The processor cross-references the findings with nearby thermal hotspots and weather information, retaining source and observation times.
 5. The cooperative performs human review and records the incident follow-up.
 
-Step 3 has a configurable implementation, tested with controlled HTTP responses; a live synthetic-fixture call has now passed, while real-photo validation remains pending. Step 4 remains future work: the environmental service supplies context separately. The platform supports decisions and does not replace emergency services or official warnings. The MVP does not automatically send communications to authorities.
+Step 3 has a configurable implementation, tested with controlled HTTP responses; a live synthetic-fixture call has now passed, while real-photo validation remains pending. Step 4 is implemented for new incidents with coordinates: context is queried, snapshotted and correlated before persistence. Without location or usable sources, evidence remains unavailable. The platform supports decisions and does not replace emergency services or official warnings. The MVP does not automatically send communications to authorities.
 
 Combating deforestation is the project's purpose. Current scope does not include general tree-clearing detection, deforestation measurement or calculating burned hectares from photographs.
 
@@ -93,7 +94,7 @@ The statuses below were checked against source code during Phase 0. The 13 Postg
 | Weather and satellite data | Open-Meteo and NASA FIRMS connectors; explicit demo mode |
 | Image AI | VisionProvider with simulated/Gemini implementations; live synthetic-fixture call validated; real-photo evaluation pending |
 | Fire, smoke, dry vegetation and burned vegetation | Structured per-signal output implemented; quality not measured on real photos |
-| Automatic image/satellite/weather cross-referencing | Proposed; not implemented in the current flow |
+| Evidence correlation | Implemented: incident snapshot, spatial/time filtering and weather context; not fire confirmation or risk scoring |
 | HTML/CSS/JavaScript web interface | Proposed; no implementation in the audited checkout |
 | Wildfire risk index | Not implemented; returns a null value |
 | SOS and external communication | Contact details and draft; no automatic dispatch or sending |
@@ -123,7 +124,7 @@ flowchart TD
 | Database | PostgreSQL 16 and PostGIS 3.7, as specified by the Compose image |
 | Files | Private volume; the database stores only the photograph reference |
 | Proposed interface | HTML, CSS and JavaScript; desktop/mobile browser; Nginx for static files and proxy in the presentation |
-| Image processing | Synchronous vision adapter in the backend; Gemini optional, persistent worker and cross-referencing pending |
+| Image/context processing | Synchronous vision plus incident context snapshot/correlation; persistent worker pending |
 | Mobile reference | React Native, Expo and TypeScript; earlier integration client, without a complete application |
 | Runtime and tests | Docker Compose and pytest |
 
@@ -141,10 +142,11 @@ The interface calls the backend. The backend authorizes property access and call
 | `backend/backend/schemas.py` | Input validation |
 | `backend/backend/vision.py`, `vision_models.py` | Vision interface, providers and validated output |
 | `backend/vision-result.schema.json` | New visual-result JSON schema |
+| `backend/backend/evidence.py`, `backend/backend/migrations/002_incident_evidence.sql` | Context validation, correlation and snapshot persistence |
 | `backend/backend/db.py`, `storage.py` | Database connection and private storage |
 | `backend/backend/migrate.py`, `migrations/` | Migration runner and versioned SQL |
 | `backend/backend/bootstrap.py` | First cooperative representative creation |
-| `backend/openapi.json` | Backend 2.0.0 contract |
+| `backend/openapi.json` | Backend 2.1.0 contract, typed incident detail |
 | `backend/incident-metadata.schema.json` | JSON schema for upload metadata |
 | `backend/examples/expo-client.ts` | Reference integration client |
 | `dados-api/dados/` | Environmental application, models and providers |
@@ -237,6 +239,8 @@ Python does not load `.env` automatically; export variables in the terminal. The
 | `VISION_MODE` | Image provider, independent of DATA_MODE | `simulated` (default) or `gemini` |
 | `GEMINI_API_KEY` | Vision credential; backend only | Required in gemini mode |
 | `GEMINI_MODEL` | Model ID supporting image input and structured JSON | Required in gemini mode; no assumed default |
+| `EVIDENCE_RADIUS_KM` | Correlation radius around incident coordinates | 10 km; allowed 1–50 |
+| `EVIDENCE_WINDOW_HOURS` | Inclusive lookback from server receipt time | 24 h; allowed 1–96 |
 
 Do not commit `.env`, tokens, keys, databases or private photos. For an existing installation, preserve the actual database/user names and Compose project: changing these variables does not rename an initialized database.
 
@@ -442,7 +446,21 @@ Authorization and idempotency checks run before the model. Only the reencoded JP
 
 Processing is synchronous in the current request/transaction, with HTTP timeouts of 20 seconds per operation (connect: 5 seconds), one attempt and no automatic retry. This adds latency and holds the database lock. A crash after a provider call but before database commit can lead to another billable call on retry; there is no exactly-once external execution guarantee or durable queue. The prompt treats image text as untrusted content; this is a precaution, not a measured prompt-injection guarantee.
 
-Incident upload still does not call the environmental service. `GET /v1/properties/{id}/environment` queries property context separately. Environmental snapshots, photo capture time, image × FIRMS × weather correlation and a risk index remain absent. A single photo cannot establish location, moisture or burned hectares. Lack of signs/hotspots does not establish safety. Next steps are authorized real-photo/end-to-end validation, independent labeled-image evaluation and then the planned worker/correlation work. No AI accuracy metric has been measured.
+Phase 3 queries environmental context on new uploads with coordinates, persists its snapshot and correlates hotspots in space/time while preserving weather and the visual result. `GET /v1/properties/{id}/environment` remains a separate current-property query. Photo capture time, a persistent worker and a risk index remain absent. A single photo cannot establish location, moisture or burned hectares. Lack of signs/hotspots does not establish safety. Next steps are authorized real-photo/live-FIRMS validation, independent labeled-image evaluation and persistent worker processing. No AI accuracy metric has been measured.
+
+## Evidence correlation
+
+New incidents with authorized coordinates query dados-api using the incident point, then persist `environment_snapshot` and `evidence` with sources, observation/fetch times, warnings and simulation flags. Defaults: **10 km / 24 hours before server receipt**, inclusive. The backend requests 2 provider days by default (daily margin) and filters the exact window itself. These are MVP context heuristics, not calibrated risk thresholds; see [decisions](docs/DECISOES.md).
+
+| consistency | Meaning |
+|---|---|
+| `consistent` | Both environmental sources ok and at least one hotspot spatially/temporally compatible |
+| `no_nearby_hotspot` | Both sources ok, no compatible returned hotspot; the report remains valid for review |
+| `unavailable` | Missing location, stale/unavailable source or invalid context; retain partial evidence, never interpret as no risk |
+
+Hotspot distances are recalculated; each match retains source, time, categorical confidence and time difference. Weather retains its envelope and signed time difference. `consistent` does not assert agreement with the image or confirm a fire. Visual disagreements are warnings for human review. Simulation is preserved per source and in the aggregate. Empty hotspot list differs from null/unavailable. No property-coordinate fallback is used when the report has no location.
+
+`GET /v1/incidents/{id}` returns the authorized typed contract **2.1.0**, including immutable snapshot, evidence, AI and review history. Apply migration **002** before running the updated backend. Old incidents retain null snapshot/evidence; replay and GET do not fetch new context. Antimeridian distance math works, but FIRMS boxes crossing it remain explicitly unavailable while weather can be preserved. Full rules, parameters, migration and limitations: [docs/CRUZAMENTO.md](docs/CRUZAMENTO.md).
 
 ## Persistence and operations
 
@@ -473,6 +491,8 @@ For a phone on the same network, set `BACKEND_BIND=0.0.0.0` on a trusted network
 Never include `DATA_API_KEY`, `FIRMS_MAP_KEY`, `GEMINI_API_KEY` or `DATABASE_URL` in the application; `EXPO_PUBLIC_*` variables are public. Photo URLs require Bearer authentication. See [docs/MOBILE.md](docs/MOBILE.md).
 
 ## Testing and validation
+
+**Phase 3:** [CI with PostGIS passed 102 tests, none skipped, 1 warning in 15.14s](https://github.com/armandor123/terra-firma/actions/runs/42433174536), tested commit `48c9e5536dc153e0c894bad75442cfca1d6f82d2`. Includes migration, persisted/partial snapshots, retries, authorization and correlation edge cases. Providers are controlled/demo in this run; live FIRMS and field-association accuracy remain unvalidated.
 
 **Phase 2 CI: 65 passed, none skipped, 1 warning in 10.57s**, with PostgreSQL/PostGIS. [Run and logs](https://github.com/armandor123/terra-firma/actions/runs/42429976440), tested commit `01ae50dab2e1649a0317bc1069e12b6558c3c6ec`. Local verification had 49 passed/16 skipped without a database; all 16 were subsequently exercised in CI. Gemini tests use controlled HTTP responses, without real inference or quality metrics.
 
@@ -531,7 +551,7 @@ The identity ZIP contains SVG/PNG logos, 30 icons, photographs/crops, a palette,
 | 1 | Execute and record PostgreSQL/PostGIS tests and resolve failures |
 | 2 | Implement the presentation's web interface with photo, location and review flows |
 | 3 | Validate live connectors, availability and data presentation |
-| 4 | Validate Gemini with authorized photos, then implement satellite/weather cross-referencing and retain human review |
+| 4 | Validate Gemini/incident correlation with authorized real photos and live FIRMS; retain human review |
 | 5 | Add filters/exports, reviewed notifications and usage metrics |
 | 6 | Assess polygons, historical sources and validated risk/spread methods |
 

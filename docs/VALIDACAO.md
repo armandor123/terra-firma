@@ -1,5 +1,17 @@
 # Validação — versão 2, PostgreSQL/mobile
 
+## Fase 3 — regras, snapshot e contrato 2.1.0
+
+Base publicada da Fase 2: `c614b6dacafcfbe8aef63c8dd2f1c679f2815eaf`; itens pedidos conferidos, [CI 65 testes aprovado](https://github.com/armandor123/terra-firma/actions/runs/42431574627) e chamada Gemini sintética registrada. Não representa avaliação de detecção em campo.
+
+Local: `python -m pytest -ra -q` → **80 passed, 22 skipped, 1 warning in 1.16s**. Docker permanece indisponível localmente. Os 22 cenários de banco foram depois executados no CI, conforme evidência abaixo. O OpenAPI foi regenerado dos apps em 2.1.0, com detalhe tipado; migração 001 preservada e nova 002 adicionada.
+
+Cobertura adicional: regras de janela/raio exatos e inclusivos, futuro, timezone, simulação por fonte, divergência IA/contexto, vazio diferente de indisponível, clima stale e falhas parciais, coordenadas/antimeridiano/polos, parâmetros inválidos e query incompatível; persistência de snapshot e origem, replay sem nova consulta, isolamento, upgrade de registro histórico e detalhe versionado. Integração ASGI com dados-api/demo e HTTP controlado (incluindo clima preservado quando FIRMS recusa a caixa no antimeridiano).
+
+Resultado remoto confirmado em 07/11/2026, 22:12 (São Paulo): [CI 42433174536](https://github.com/armandor123/terra-firma/actions/runs/42433174536), [job/logs](https://github.com/armandor123/terra-firma/actions/runs/42433174536/job/128586311344), commit `48c9e5536dc153e0c894bad75442cfca1d6f82d2`, branch `feat/fase-3-evidencias`: **102 passed, 1 warning in 15.14s**, nenhum ignorado, saída 0 e limpeza bem-sucedida. Inclui migração/upgrade histórico, persistência/retorno e regras de correlação em PostgreSQL/PostGIS real; o aviso remanescente é de depreciação TestClient/HTTPX.
+
+Nenhuma chamada real NASA/Open-Meteo ou nova chamada Gemini foi feita nesta fase; testes técnicos não medem acurácia de imagem ou de associação espacial/temporal. Startup do Compose de desenvolvimento permanece uma verificação separada da suíte de testes.
+
 ## Verificação externa Gemini — 07/11/2026, 21:47 (São Paulo)
 
 Após autorização e fornecimento da chave pelo usuário, foram feitas consultas de metadados e duas tentativas explícitas de geração, sem salvar a credencial no código, arquivos de configuração, CI ou commits. A listagem de modelos retornou HTTP 200. GeminiProvider foi executado sem alterar o código, usando transporte HTTP real (não MockTransport), na revisão `6af2197905b16bab8ba03fe2665872c3d24ce1b9`.

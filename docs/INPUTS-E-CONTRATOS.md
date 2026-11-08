@@ -1,4 +1,4 @@
-# Inputs, outputs e integração — dados 1.0 / backend 2.0
+# Inputs, outputs e integração — dados 1.0 / backend 2.1
 
 ## 1. Entrada principal do projeto de dados
 
@@ -58,7 +58,7 @@ Não é uma interseção com o polígono da propriedade. A caixa inicial é cons
 
 `risk.level=null`, `method=null`, `validated=false`. Um indicador não foi inventado a partir da temperatura ou contagem de focos. Adotar uma fonte oficial ou método validado é uma etapa separada.
 
-## 3. Inputs do backend mobile — versão 2.0
+## 3. Inputs do backend mobile — contrato 2.1.0, metadata de upload preservado
 
 ### Login e sessão
 
@@ -179,4 +179,4 @@ Falhas de provedor no serviço de dados continuam como HTTP 200 com envelope `un
 
 ## 5. Contratos OpenAPI
 
-Ambos os projetos incluem `openapi.json`; também disponíveis em `/openapi.json` e `/docs`. O multipart documenta `metadata` como string JSON; seu schema separado está em `backend/incident-metadata.schema.json`. Algumas saídas de dicionários livres do backend são descritas neste guia.
+Ambos os projetos incluem `openapi.json`; também disponíveis em `/openapi.json` e `/docs`. Backend: 2.1.0, com resposta de detalhe de incidente tipada, `contract_version`, `environment_snapshot` e `evidence`. Dados-api: 1.0.0. A mudança é aditiva; rotas v1 e entrada de upload permanecem. O multipart documenta `metadata` como string JSON; seu schema separado está em `backend/incident-metadata.schema.json`. Os novos campos são null para incidentes anteriores à migração 002. Contrato, exemplos de interpretação, diferenças temporais e parâmetros: [CRUZAMENTO.md](CRUZAMENTO.md). Algumas outras saídas do backend ainda são dicionários livres.
