@@ -1,6 +1,18 @@
 # Validação — versão 2, PostgreSQL/mobile
 
-## Resultado atual
+## Fase 0 — 07/11/2026
+
+Base auditada: `1825555f9a714ffab131a3e7796f4223bb753944`. Execução em Ubuntu 24.04 / Python 3.12.14, dependências dos dois requirements instaladas em virtualenv isolado.
+
+Comando: `python -m pytest -ra -q dados-api/tests backend/tests tests_integration.py`.
+
+**Resultado real: 11 passed, 13 skipped, 1 warning in 0.98s; exit 0.** Os 13 cenários de banco foram ignorados por falta de `TEST_DATABASE_URL`. O aviso é de depreciação do TestClient/HTTPX. Nenhum teste executado falhou; os testes ignorados continuam sem resultado.
+
+`docker compose up --build` e `docker compose -f compose.test.yaml up --build --abort-on-container-exit --exit-code-from tests` foram tentados e falharam com `docker: command not found`. Nenhum container ou banco foi iniciado. **Fase 0 bloqueada para aprovação; não avançar sem ambiente completo e suíte PostgreSQL/PostGIS.**
+
+Os dois OpenAPIs e `backend/incident-metadata.schema.json` correspondem estruturalmente à geração atual dos apps/modelo, sem conexão ao banco. Nenhuma chamada nova a NASA, Open-Meteo ou IA foi executada. `resultado-testes.txt` contém uma saída anterior de 24 aprovados sem proveniência de commit/ambiente, insuficiente para aprovar esta fase. Evidências detalhadas e inconsistências: [AUDITORIA.md](AUDITORIA.md).
+
+## Resultado histórico — versão 2 anterior à auditoria
 
 **11 testes passaram e 13 testes dependentes de PostgreSQL foram ignorados explicitamente.** Não existe comprovação de execução real do PostgreSQL/PostGIS nesta versão. Não foi possível iniciar esse serviço no ambiente, e Docker não estava disponível.
 

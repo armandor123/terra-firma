@@ -1,6 +1,6 @@
 # Terra-Firma
 
-**Combate ao desmatamento com foco em queimadas e incêndios florestais, por meio de análise de imagens por IA e cruzamento com dados de satélite.**
+**MVP de relatos com fotos por agricultores e revisão por cooperativas, com conectores de dados ambientais. IA real de imagem e cruzamento automático com satélite/clima são etapas planejadas.**
 
 [English](README.md) · **Português (Brasil)** · [Repositório](https://github.com/armandor123/terra-firma)
 
@@ -9,6 +9,8 @@ Projeto do **Grupo 13**, desenvolvido para o desafio **Reboot the Earth 2026**. 
 A ideia central é permitir que **a IA analise fotos enviadas pelo produtor para identificar indícios de focos de incêndio, fumaça, mata seca e vegetação queimada**, cruzando essas evidências com **focos de calor de satélite e dados meteorológicos**. A cooperativa recebe informações organizadas para revisar ocorrências e coordenar encaminhamentos.
 
 > **Estado do projeto:** MVP em desenvolvimento. O backend oficial e o serviço de dados ambientais estão descritos nos READMEs técnicos anteriores. A apresentação propõe interface web em HTML/CSS/JavaScript e um processador de análise com Google Gemini. **A análise de imagens atual é simulada: a identificação real de fogo ou mata seca e o cruzamento automático das evidências ainda precisam ser implementados e validados.** O índice de risco também não é calculado. O histórico contém um cliente Expo de referência para possível integração mobile.
+
+> **Auditoria da Fase 0 — 07/11/2026:** Código inspecionado em `1825555f9a714ffab131a3e7796f4223bb753944`. A suíte local retornou **11 aprovados, 13 ignorados e 1 aviso**. Os dois comandos Compose foram tentados, mas Docker não está disponível; os cenários PostgreSQL/PostGIS continuam sem execução nesta auditoria. **Fase 0 bloqueada até a validação integral do ambiente e do banco.** Veja [auditoria e evidências](docs/AUDITORIA.md) e [decisões](docs/DECISOES.md). Nenhum código de aplicação foi alterado.
 
 ## Sumário
 
@@ -70,7 +72,7 @@ O combate ao desmatamento é a finalidade do projeto. O escopo atual não inclui
 
 ## Escopo e estado das funcionalidades
 
-Os estados técnicos abaixo preservam o levantamento dos READMEs fornecidos, referente à revisão indicada ao final. Nesta atualização não houve nova inspeção do código nem execução dos serviços. A apresentação descreve a proposta de produto e não comprova, por si só, implementação.
+Os estados abaixo foram conferidos contra o código na Fase 0. Implementação não equivale a validação de banco ou produção: os 13 cenários dependentes de PostgreSQL continuam sem execução nesta auditoria. A apresentação descreve a proposta de produto e não comprova, por si só, implementação.
 
 | Funcionalidade | Estado atual |
 |---|---|
@@ -87,7 +89,7 @@ Os estados técnicos abaixo preservam o levantamento dos READMEs fornecidos, ref
 | IA de imagens | Simulada, inconclusiva; Gemini proposto para análise real |
 | Identificação de fogo, fumaça, mata seca e vegetação queimada | Objetivo da análise de imagem; pendente de implementação e validação |
 | Cruzamento automático entre imagem, satélite e clima | Proposto; não implementado no fluxo atual |
-| Interface web HTML/CSS/JavaScript | Proposta na apresentação; implementação não verificada nesta atualização |
+| Interface web HTML/CSS/JavaScript | Proposta; sem implementação no checkout auditado |
 | Índice de risco de incêndio | Não implementado; retorna valor nulo |
 | SOS e comunicação externa | Contato e minuta; sem despacho ou envio automático |
 | Aplicativo React Native/Expo | Cliente de referência; sem telas, APK ou IPA |
@@ -395,6 +397,8 @@ Consulte os termos, cotas e atribuições dos provedores antes de publicar o ser
 
 O backend armazena `status=simulated`, `simulated=true`, `classification=inconclusive` e `confidence=null`. **Nenhum modelo analisa a foto atualmente.** A simulação mantém a jornada de ocorrência e revisão, sem alegar detecção real.
 
+O upload de ocorrência não chama o serviço ambiental. `GET /v1/properties/{id}/environment` consulta o contexto separadamente, usando as coordenadas da propriedade. Não há snapshot ambiental vinculado à ocorrência. O horário da ocorrência é o recebimento pelo servidor; o contrato atual de metadata não contém horário de captura da foto. Essas lacunas precisam ser resolvidas antes de declarar cruzamento espacial e temporal.
+
 ### Análise de imagem e cruzamento previstos
 
 O **Google Gemini** aparece na apresentação como serviço de IA multimodal proposto. O processador deverá analisar a fotografia para indicar sinais visuais de **fogo ou chamas, fumaça, mata seca e vegetação queimada**. Esses sinais devem ser acompanhados de limitações de qualidade da imagem e da possibilidade de resultado inconclusivo.
@@ -434,7 +438,7 @@ Privacidade, retenção, aviso de tratamento, acesso restrito e atendimento a so
 
 ## Integração da interface
 
-A interface web proposta na apresentação deve implementar login, envio de foto, permissão de localização, consulta de contexto e revisão pela cooperativa. A implementação dessas telas não foi verificada nesta atualização. Configure CORS ou proxy conforme a origem usada, mantenha as credenciais internas no servidor e preserve a autenticação ao acessar fotos.
+A interface web proposta na apresentação deve implementar login, envio de foto, permissão de localização, consulta de contexto e revisão pela cooperativa. Essas telas não existem no checkout auditado. Configure CORS ou proxy conforme a origem usada, mantenha as credenciais internas no servidor e preserve a autenticação ao acessar fotos.
 
 ### Referência para possível aplicativo mobile
 
@@ -463,7 +467,7 @@ python -m pytest -q dados-api/tests backend/tests tests_integration.py
 
 Nesse segundo fluxo, configure `TEST_DATABASE_URL` para um banco **exclusivo de testes** com PostGIS se quiser executar os cenários de banco. Sem a variável, eles são ignorados explicitamente. Os cenários criam e removem schemas próprios.
 
-A evidência registrada em [docs/VALIDACAO.md](docs/VALIDACAO.md) informa **11 testes aprovados e 13 dependentes de PostgreSQL ignorados**. É um resultado histórico do repositório, não uma nova execução desta documentação. Docker/PostGIS, NASA real, aplicativo em aparelho e qualidade de IA ainda não têm validação completa registrada. Os testes do backend SQLite anterior não comprovam esta versão PostgreSQL.
+A execução da Fase 0 em 07/11/2026 retornou **11 aprovados, 13 ignorados e 1 aviso em 0,98 s**, exit 0. Todos os 13 skips decorreram da ausência de `TEST_DATABASE_URL`; isso **não aprova a suíte completa**. Os dois comandos Compose falharam antes de iniciar, com `docker: command not found`. Veja [docs/AUDITORIA.md](docs/AUDITORIA.md) para evidências por arquivo/linha e [docs/VALIDACAO.md](docs/VALIDACAO.md) para o histórico. O arquivo versionado `resultado-testes.txt` informa 24 aprovados, mas não identifica commit/ambiente; não é evidência desta auditoria. Docker/PostGIS, NASA real, execução em aparelho e qualidade de IA permanecem sem validação aqui. Os testes SQLite anteriores não comprovam esta versão PostgreSQL. Informe `tests_integration.py` explicitamente no comando acima; seu nome está fora dos padrões de descoberta padrão do pytest.
 
 ## Identidade visual e créditos
 
@@ -524,4 +528,4 @@ Documentação técnica complementar:
 
 Referências dos conectores: [Open-Meteo](https://open-meteo.com/en/docs) e [NASA FIRMS API](https://firms.modaps.eosdis.nasa.gov/api/).
 
-**Base desta atualização — 06/11/2026:** apresentação `Terra_Firma_Grupo_13_Apresentacao (1).pptx`, dois READMEs fornecidos e decisões recuperadas do histórico do projeto, complementados pelo foco de IA informado pela equipe: identificar indícios de incêndio e mata seca e cruzá-los com dados de satélite. Os detalhes técnicos, caminhos, comandos e resultados históricos foram preservados dos READMEs, que citavam a revisão `2907da03d04dfc1ca46b2aef754db362bd752b2a`. O repositório e os provedores não foram revalidados nesta atualização. As capacidades propostas permanecem identificadas como futuras. Esta entrega altera somente documentação.
+**Base desta atualização — 07/11/2026:** auditoria do código da revisão `1825555f9a714ffab131a3e7796f4223bb753944` e execução local de testes registrada acima. As descrições de produto, apresentação e identidade visual foram preservadas da documentação de 06/11; seus arquivos externos não foram revalidados. Não houve nova chamada real a provedor ou modelo. Esta fase altera somente documentação e permanece bloqueada para validação integral do banco/ambiente.

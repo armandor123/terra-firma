@@ -1,7 +1,7 @@
 
 # Terra-Firma
 
-**Combating deforestation with a focus on vegetation fires and wildfires through AI image analysis combined with satellite data.**
+**An MVP for farmer photo reports and cooperative review, with environmental data connectors. Real image AI and automatic satellite/weather cross-referencing are planned.**
 
 **English** · [Português (Brasil)](README.pt-BR.md) · [Repository](https://github.com/armandor123/terra-firma)
 
@@ -10,6 +10,8 @@ A **Group 13** project developed for **Reboot the Earth 2026**. Terra-Firma aims
 The central idea is for **AI to analyze photographs submitted by farmers for signs of fire, smoke, dry vegetation and burned vegetation**, then cross-reference those findings with **satellite thermal hotspots and weather data**. Cooperatives receive organized evidence to review incidents and coordinate follow-up.
 
 > **Project status:** MVP under development. The previous technical READMEs describe the official backend and environmental data service. The presentation proposes an HTML/CSS/JavaScript web interface and an analysis worker using Google Gemini. **Current image analysis is simulated: real identification of fire or dry vegetation and automatic cross-referencing of evidence still require implementation and validation.** A wildfire risk index is not calculated. Earlier work includes an Expo reference client for potential mobile integration.
+
+> **Phase 0 audit — November 7, 2026:** Source inspected at `1825555f9a714ffab131a3e7796f4223bb753944`. The local suite returned **11 passed, 13 skipped, 1 warning**. Both Compose commands were attempted but Docker is unavailable; PostgreSQL/PostGIS scenarios remain unexecuted in this audit. **Phase 0 is blocked pending full environment and database validation.** See [audit and evidence](docs/AUDITORIA.md) and [decisions](docs/DECISOES.md). No application code changed.
 
 ## Contents
 
@@ -71,7 +73,7 @@ Combating deforestation is the project's purpose. Current scope does not include
 
 ## Scope and feature status
 
-The technical statuses below preserve the assessment in the supplied READMEs for the revision identified at the end. This update did not include a new source-code inspection or service execution. The presentation describes the product proposal and does not independently demonstrate implementation.
+The statuses below were checked against source code during Phase 0. Implementation does not imply successful database or production validation: the 13 PostgreSQL-dependent scenarios remain unexecuted in this audit. The presentation describes the product proposal and does not independently demonstrate implementation.
 
 | Feature | Current status |
 |---|---|
@@ -88,7 +90,7 @@ The technical statuses below preserve the assessment in the supplied READMEs for
 | Image AI | Simulated and inconclusive; Gemini proposed for real analysis |
 | Fire, smoke, dry vegetation and burned vegetation identification | Intended image-analysis capability; implementation and validation pending |
 | Automatic image/satellite/weather cross-referencing | Proposed; not implemented in the current flow |
-| HTML/CSS/JavaScript web interface | Proposed in the presentation; implementation not verified in this update |
+| HTML/CSS/JavaScript web interface | Proposed; no implementation in the audited checkout |
 | Wildfire risk index | Not implemented; returns a null value |
 | SOS and external communication | Contact details and draft; no automatic dispatch or sending |
 | React Native/Expo application | Reference client; no screens, APK or IPA |
@@ -396,6 +398,8 @@ Check provider terms, quotas and attribution requirements before publishing the 
 
 The backend stores `status=simulated`, `simulated=true`, `classification=inconclusive` and `confidence=null`. **No model currently analyzes the photo.** Simulation preserves the reporting and review journey without claiming real detection.
 
+Uploading an incident does not call the environmental service. `GET /v1/properties/{id}/environment` queries context separately, using the property coordinates. Environmental snapshots are not stored with incidents. The incident timestamp is server receipt time; the current metadata contract has no photo capture timestamp. These gaps must be addressed before claiming spatial and temporal cross-referencing.
+
 ### Planned image analysis and cross-referencing
 
 The presentation names **Google Gemini** as the proposed multimodal AI service. The processor should assess the photograph for visual signs of **fire or flames, smoke, dry vegetation and burned vegetation**. Findings should include image-quality limitations and support an inconclusive outcome.
@@ -435,7 +439,7 @@ Privacy, retention, a processing notice, restricted access and handling data-sub
 
 ## Interface integration
 
-The web interface proposed in the presentation should implement login, photo submission, location permission, context display and cooperative review. This update did not verify implementation of these screens. Configure CORS or a proxy for the selected origin, retain internal credentials on the server and preserve authentication when retrieving photos.
+The web interface proposed in the presentation should implement login, photo submission, location permission, context display and cooperative review. These screens are absent from the audited checkout. Configure CORS or a proxy for the selected origin, retain internal credentials on the server and preserve authentication when retrieving photos.
 
 ### Reference for a potential mobile application
 
@@ -464,7 +468,7 @@ python -m pytest -q dados-api/tests backend/tests tests_integration.py
 
 For this second workflow, configure `TEST_DATABASE_URL` to a **dedicated test database** with PostGIS to run database scenarios. Without it, those scenarios are explicitly skipped. Scenarios create and remove their own schemas.
 
-The evidence in [docs/VALIDACAO.md](docs/VALIDACAO.md) records **11 passed tests and 13 PostgreSQL-dependent tests skipped**. This is a historical repository result, not a new execution for this documentation. Complete validation is not yet recorded for Docker/PostGIS, live NASA access, the application on a device or AI quality. Previous SQLite-backend tests do not validate this PostgreSQL version.
+The Phase 0 run on November 7, 2026 returned **11 passed, 13 skipped, 1 warning in 0.98s**, exit 0. All 13 skips were caused by missing `TEST_DATABASE_URL`; this is **not a full-suite pass**. Both Compose commands failed before startup with `docker: command not found`. See [docs/AUDITORIA.md](docs/AUDITORIA.md) for file/line evidence and [docs/VALIDACAO.md](docs/VALIDACAO.md) for validation history. The tracked `resultado-testes.txt` reports 24 passed but lacks commit/environment provenance; it is not evidence of this audit. Docker/PostGIS, live NASA access, device execution and AI quality remain unvalidated here. Previous SQLite-backend tests do not validate this PostgreSQL version. Pass `tests_integration.py` explicitly as above; its name is outside default pytest discovery patterns.
 
 ## Visual identity and credits
 
@@ -525,4 +529,4 @@ Additional technical documentation, currently in Portuguese:
 
 Connector references: [Open-Meteo](https://open-meteo.com/en/docs) and [NASA FIRMS API](https://firms.modaps.eosdis.nasa.gov/api/).
 
-**Basis for this update — November 6, 2026:** `Terra_Firma_Grupo_13_Apresentacao (1).pptx`, the two supplied READMEs and decisions retrieved from project conversation history, supplemented by the team's stated AI focus: identify signs of fire and dry vegetation and cross-reference them with satellite data. Technical details, paths, commands and historical results were retained from the READMEs, which cited revision `2907da03d04dfc1ca46b2aef754db362bd752b2a`. The repository and providers were not revalidated in this update. Proposed capabilities remain identified as future work. This delivery changes documentation only.
+**Update basis — November 7, 2026:** Phase 0 source audit of revision `1825555f9a714ffab131a3e7796f4223bb753944` and the local test execution recorded above. Product, presentation and visual-identity descriptions were retained from the November 6 documentation; their external assets were not revalidated. No new live-provider or model call was made. This phase changes documentation only and remains blocked for full database/environment validation.

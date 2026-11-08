@@ -8,7 +8,7 @@ O backend agora exige PostgreSQL, conforme o PRD. Foi removido o código SQLite 
 
 ## Banco e migrações
 
-`backend/migrations/001_initial.sql` cria cooperativas, usuários, propriedades, sessões, histórico de refresh, ocorrências e revisões. `backend/migrate.py` registra nome/checksum/aplicação de cada versão, bloqueia execução concorrente e aplica tudo em transação. Reexecutar uma migração intacta não duplica tabelas. Editar arquivo já aplicado é erro; criar outro arquivo para próximas mudanças.
+`backend/backend/migrations/001_initial.sql` cria cooperativas, usuários, propriedades, sessões, histórico de refresh, ocorrências e revisões. `backend/backend/migrate.py` registra nome/checksum/aplicação de cada versão, bloqueia execução concorrente e aplica tudo em transação. Reexecutar uma migração intacta não duplica tabelas. Editar arquivo já aplicado é erro; criar outro arquivo para próximas mudanças.
 
 O Compose espera o banco ficar saudável, executa o migrador e só inicia o backend se ele terminar com sucesso. Não há downgrade nem importação automática do antigo arquivo SQLite. Se houver dados anteriores, exportá-los e planejar transformação antes de descontinuar a base.
 
