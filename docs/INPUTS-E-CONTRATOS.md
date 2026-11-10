@@ -138,9 +138,9 @@ Exemplo de `metadata`:
 | description | opcional, até 2.000 caracteres |
 | latitude/longitude | ambas presentes ou ambas ausentes |
 | location_source | gps, manual ou unavailable |
-| location_authorized | true quando houver coordenadas GPS/manuais |
+| location_authorized | true para autorizar coordenadas GPS/manuais enviadas no JSON |
 
-Sem localização, omitir latitude/longitude e usar `unavailable`/`false`. A ausência não impede o relato. O backend determina usuário/horário, valida o arquivo real e remove EXIF. `photo_base64` não é mais aceito nesta versão.
+Sem coordenadas de fallback, omita latitude/longitude e use `unavailable`/`false`. O servidor valida a imagem e prioriza um par válido de coordenadas GPS EXIF, independentemente do fallback no JSON. A ocorrência retorna `location_source=photo_exif` e `location_authorized=true` nesse caso. A origem `photo_exif` é definida pelo servidor. Sem GPS válido na foto, o worker consulta as coordenadas autorizadas do JSON ou usa o ponto cadastrado da propriedade. O cliente deve informar sobre o uso do GPS da foto antes do envio. A imagem armazenada é reencodificada sem metadados. `photo_base64` não é aceito.
 
 Resposta de criação ou reenvio aceito, HTTP 201:
 
@@ -150,7 +150,7 @@ Resposta de criação ou reenvio aceito, HTTP 201:
 
 No reenvio idêntico, devolve o mesmo ID com `replayed=true`. Mesmo UUID com outro metadata ou outros bytes de foto retorna 409. A chave é por agricultor, portanto não há conflito entre usuários diferentes. Guardar metadata e arquivo comprimido de forma estável na fila offline; não recomprimir nem recriar o UUID a cada tentativa.
 
-A deduplicação usa transação, lock consultivo e restrição única no PostgreSQL, inclusive para requisições concorrentes. Não existe worker offline no servidor: o aplicativo decide quando reenviar. O GET da ocorrência mostra `location_verified=false`, análise simulada e URL de foto autenticada.
+A deduplicação usa transação, lock consultivo e restrição única no PostgreSQL, inclusive para requisições concorrentes. Não existe worker offline no servidor: o aplicativo decide quando reenviar. O GET da ocorrência mostra `location_verified=false`, o estado da análise e a URL autenticada da foto.
 
 ### Revisão
 

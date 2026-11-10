@@ -6,6 +6,16 @@ const w=dom.window,doc=w.document;let role='farmer',must=false,uploaded=false,re
 const errors=[];w.addEventListener('unhandledrejection',e=>errors.push(e.reason));
 const prop={id:'p1',name:'Sítio',municipality:'Campinas',state:'SP',area_ha:10,latitude:-22,longitude:-47};
 w.URL.createObjectURL=()=> 'blob:test';w.URL.revokeObjectURL=()=>{};
+let stopped=0;
+const track={stop:()=>stopped++};
+const originalPhoto=new w.Blob(['original camera bytes'],{type:'image/jpeg'});
+Object.defineProperty(w.navigator,'mediaDevices',{value:{
+ getUserMedia:async()=>({getTracks:()=>[track],getVideoTracks:()=>[track]})
+}});
+Object.defineProperty(w.navigator,'geolocation',{value:{
+ getCurrentPosition:success=>success({coords:{latitude:-23.5,longitude:-46.25}})
+}});
+w.ImageCapture=class { async takePhoto(){return originalPhoto;} };
 w.fetch=async(path,opts={})=>{
  let data={},status=200;
  if(path==='/v1/auth/login') data={access_token:'token',refresh_token:'refresh'};
@@ -13,7 +23,8 @@ w.fetch=async(path,opts={})=>{
  else if(path==='/v1/auth/password') must=false;
  else if(path==='/v1/properties') data=[prop];
  else if(path==='/v1/farmers') data=opts.method==='POST'?{username:'novo',temporary_password:'temporary'}:[{id:'u2',name:'José'}];
- else if(path==='/v1/incidents' && opts.method==='POST') {assert(opts.body instanceof w.FormData);const b=JSON.parse(opts.body.get('metadata'));assert(b.client_request_id);uploaded=true;data={id:'i1'};}
+ else if(path==='/v1/incidents' && opts.method==='POST') {assert(opts.body instanceof w.FormData);const b=JSON.parse(opts.body.get('metadata'));assert(b.client_request_id);assert.equal(b.location_source,'gps');assert.equal(b.latitude,-23.5);
+  assert.equal(b.longitude,-46.25);assert.equal(b.location_authorized,true);assert.equal(opts.body.get('photo').size,originalPhoto.size);uploaded=true;data={id:'i1'};}
  else if(path==='/v1/incidents/i1/photo') return {ok:true,blob:async()=>new w.Blob(['image'])};
  else if(path==='/v1/incidents/i1') data={id:'i1',description:'Fumaça',status:revision?'under_review':'submitted',photo_url:'/v1/incidents/i1/photo',ai:{status:'unavailable',warning:'Sem chave Gemini'},reviews:[]};
  else if(path==='/v1/incidents/i1/review') {assert.equal(JSON.parse(opts.body).status,'under_review');revision=true;}
@@ -33,6 +44,16 @@ const submit=id=>doc.querySelector(id).dispatchEvent(new w.Event('submit',{bubbl
  await wait(()=>doc.querySelector('h1').textContent.startsWith('Olá'));
  assert(!doc.querySelector('h1 img')); // untrusted name escaped
  w.location.hash='#/foto';await wait(()=>doc.querySelector('#upload'));
+ assert.equal(doc.querySelector('h1').textContent,'Novo relato');
+ assert.equal(doc.querySelector('#upload input[type=file]'),null);
+ submit('#upload');await wait(()=>doc.querySelector('#aviso').textContent.includes('Tire uma foto'));
+ doc.querySelector('#gps').click();
+ doc.querySelector('#open-camera').click();
+ await wait(()=>!doc.querySelector('#camera-video').hidden);
+ doc.querySelector('#camera-video').dispatchEvent(new w.Event('loadeddata'));
+ doc.querySelector('#take-photo').click();
+ await wait(()=>!doc.querySelector('#captured-photo').hidden);
+ assert.equal(stopped,1);
  doc.querySelector('#description').value='Fumaça';submit('#upload');
  await wait(()=>doc.querySelector('h1').textContent==='Análise do registro');assert(uploaded);
  assert(doc.querySelector('#app').textContent.includes('Sem chave Gemini'));

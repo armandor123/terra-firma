@@ -18,7 +18,7 @@ from psycopg.types.json import Jsonb
 from starlette.concurrency import run_in_threadpool
 from fastapi.responses import Response
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from PIL import Image, UnidentifiedImageError
+from PIL import ExifTags, Image, ImageOps, UnidentifiedImageError
 from pwdlib import PasswordHash
 from .db import connect, database_url
 from .storage import PhotoStore
@@ -36,7 +36,29 @@ def timestamp():
 def digest(token):
     return hashlib.sha256(token.encode()).hexdigest()
 
-def clean_image(raw):
+def photo_coordinates(img):
+    try:
+        gps = img.getexif().get_ifd(ExifTags.IFD.GPSInfo)
+
+        def coordinate(values, ref, positive, negative, limit):
+            degrees, minutes, seconds = map(float, values)
+            if ref not in (positive, negative) or not (
+                0 <= degrees <= limit and 0 <= minutes < 60 and 0 <= seconds < 60
+            ):
+                raise ValueError()
+            value = degrees + minutes / 60 + seconds / 3600
+            if value > limit:
+                raise ValueError()
+            return -value if ref == negative else value
+
+        return (
+            coordinate(gps[ExifTags.GPS.GPSLatitude], gps[ExifTags.GPS.GPSLatitudeRef], 'N', 'S', 90),
+            coordinate(gps[ExifTags.GPS.GPSLongitude], gps[ExifTags.GPS.GPSLongitudeRef], 'E', 'W', 180),
+        )
+    except (KeyError, TypeError, ValueError, SyntaxError, OSError, OverflowError, ZeroDivisionError):
+        return None
+
+def prepare_photo(raw):
     try:
         if len(raw)>3_000_000:
             raise ValueError()
@@ -46,10 +68,15 @@ def clean_image(raw):
                 if img.format not in ('JPEG','PNG') or img.width*img.height>12_000_000:
                     raise ValueError()
                 img.load()
+                coordinates = photo_coordinates(img)
+                try:
+                    rgb = ImageOps.exif_transpose(img).convert('RGB')
+                except (TypeError, ValueError, SyntaxError, OSError):
+                    rgb = img.convert('RGB')
                 output = io.BytesIO()
-                # Reencodificação remove EXIF, inclusive GPS que não tenha sido autorizado.
-                img.convert('RGB').save(output,format='JPEG',quality=85)
-                return output.getvalue()
+                rgb.info.clear()
+                rgb.save(output,format='JPEG',quality=85)
+                return output.getvalue(), coordinates
     except (ValueError,UnidentifiedImageError,OSError,Image.DecompressionBombError,Image.DecompressionBombWarning):
         raise HTTPException(422,'Foto inválida: envie JPEG/PNG, até 3 MB e 12 megapixels')
 
@@ -274,7 +301,13 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
             raise HTTPException(422,'metadata inválido: verifique UUID, campos, coordenadas e autorização')
         # UploadFile já está limitado pelo middleware; limite do arquivo é separado.
         raw=photo.file.read(3_000_001)
-        image=clean_image(raw)
+        image, coordinates = prepare_photo(raw)
+        if coordinates is not None:
+            latitude, longitude = coordinates
+            source, authorized = 'photo_exif', True
+        else:
+            latitude, longitude = body.latitude, body.longitude
+            source, authorized = body.location_source, body.location_authorized
         fingerprint=hashlib.sha256((body.model_dump_json()+hashlib.sha256(raw).hexdigest()).encode()).hexdigest()
         with connect(db_url) as db:
             property_access(db,body.property_id,user)
@@ -294,8 +327,8 @@ def create_app(db_url=None, data_url=None, data_key=None, data_transport=None, p
             db.execute("""INSERT INTO incidents(id,property_id,farmer_id,description,latitude,longitude,
                 location_source,location_authorized,created_at,status,photo_key,photo_type,ai_json,client_request_id,request_hash)
                 VALUES(%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)""",
-                (incident_id,body.property_id,user['id'],body.description,body.latitude,body.longitude,
-                 body.location_source,body.location_authorized,timestamp(),'submitted',photo_key,'image/jpeg',Jsonb(ai),
+                (incident_id,body.property_id,user['id'],body.description,latitude,longitude,
+                 source,authorized,timestamp(),'submitted',photo_key,'image/jpeg',Jsonb(ai),
                  body.client_request_id,fingerprint))
             db.execute('INSERT INTO analysis_jobs(incident_id) VALUES(%s)',(incident_id,))
         return {'id':incident_id,'replayed':False}

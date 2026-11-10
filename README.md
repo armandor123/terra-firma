@@ -4,6 +4,8 @@ A interface Terra Firma do `reboot.zip` está integrada ao backend em `frontend/
 
 **Início e configuração:** [INTEGRACAO-WEB-IA.md](docs/INTEGRACAO-WEB-IA.md). Gemini analisa a foto no worker; NASA FIRMS e Open-Meteo compõem o cruzamento de evidências. Exige chaves locais para ativar os provedores. Não confirma incêndio e não aciona autoridades.
 
+No **Novo relato**, tire a foto pela câmera do navegador. O servidor prioriza o GPS da imagem para consultar focos de calor do NASA FIRMS e o clima. Sem GPS na imagem, usa a localização autorizada do aparelho ou o ponto cadastrado da propriedade. No celular, abra a interface web por HTTPS.
+
 As seções abaixo registram a base anterior; o guia de integração descreve a execução da nova versão.
 
 ---

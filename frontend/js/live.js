@@ -8,6 +8,13 @@ const aiNames = {pending:'Na fila',processing:'Processando',completed:'Concluíd
 const classes = {possible_fire:'Possível fogo',possible_smoke:'Possível fumaça',possible_burned_area:'Possível área queimada',no_visible_signs:'Sem indícios visuais claros',inconclusive:'Inconclusiva'};
 let tokens = null;
 try { tokens = JSON.parse(sessionStorage.getItem('tf.session')); } catch { /* invalid session */ }
+const locationNames = {
+    photo_exif:'GPS da foto',
+    gps:'GPS do aparelho',
+    manual:'Coordenadas informadas',
+    property_reference_not_photo_location:'Referência da propriedade'
+};
+let closeCamera = null;
 let me = null, properties = [], page = 0, poll = null, photoURL = null, generation = 0, refreshPromise = null;
 function saveTokens(t) { tokens=t; if(t) sessionStorage.setItem('tf.session',JSON.stringify(t)); else sessionStorage.removeItem('tf.session'); }
 async function request(path, options={}, retry=true) {
@@ -67,6 +74,8 @@ $('#btn-sair').onclick=async()=>{ try { await post('/v1/auth/logout',{}); } catc
 async function route() {
     const current=++generation;
     clearTimeout(poll);
+    closeCamera?.();
+    closeCamera = null;
     if(photoURL) { URL.revokeObjectURL(photoURL); photoURL=null; }
     const [name='',id='']=location.hash.replace(/^#\/?/,'').split('/');
     try {
@@ -109,34 +118,137 @@ async function producers() {
     formAction('#farmer-form',async f=>{const r=await post('/v1/farmers',Object.fromEntries(f));$('#credentials').textContent=`Usuário: ${r.username} · Senha temporária: ${r.temporary_password}. Anote agora e entregue ao produtor; será trocada no primeiro acesso.`;const list=await request('/v1/farmers');$('#farmer_id').innerHTML=options(list);});
     formAction('#property-form',async f=>{const b=Object.fromEntries(f); b.latitude=Number(b.latitude); b.longitude=Number(b.longitude);b.area_ha=b.area_ha===''?null:Number(b.area_ha); await post('/v1/properties',b); notice('Propriedade salva.');});
 }
+async function capturePhoto(video, stream) {
+    if(window.ImageCapture) {
+        try {
+            const camera = new ImageCapture(stream.getVideoTracks()[0]);
+            // Keep the camera's original bytes, including any GPS metadata.
+            const photo = await camera.takePhoto({imageWidth:video.videoWidth,imageHeight:video.videoHeight});
+            if(['image/jpeg','image/png'].includes(photo.type)) return photo;
+        } catch { /* Some devices only support the video stream. */ }
+    }
+    const canvas = document.createElement('canvas');
+    const scale = Math.min(1, 1920 / Math.max(video.videoWidth, video.videoHeight));
+    canvas.width = Math.max(1, Math.round(video.videoWidth * scale));
+    canvas.height = Math.max(1, Math.round(video.videoHeight * scale));
+    canvas.getContext('2d').drawImage(video, 0, 0, canvas.width, canvas.height);
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', 0.85));
+}
+
 function upload() {
-    if(!properties.length) return view('Registrar foto','<p>Cadastre uma propriedade com a cooperativa antes do envio.</p>');
-    view('Registrar foto',`<form id="upload" class="cartao"><label for="property_id">Propriedade</label><select name="property_id" id="property_id">${options(properties)}</select>
-      ${field('photo','Foto JPEG ou PNG, até 3 MB e 12 megapixels','file','required accept="image/jpeg,image/png"')}
-      <label for="description">Relato</label><textarea name="description" id="description" maxlength="2000"></textarea>
-      <p class="nota">A foto será enviada ao servidor e ao Google Gemini para análise visual, se configurado. Evite fotos com pessoas ou dados pessoais.</p>
-      <label><input type="checkbox" required> Autorizo o envio desta foto para análise.</label>
-      <label for="location_source">Localização</label><select id="location_source" name="location_source"><option value="unavailable">Não compartilhar localização</option><option value="manual">Coordenadas informadas</option><option value="gps">GPS do aparelho</option></select>
-      <button class="btn" type="button" id="gps">Obter GPS</button>
-      ${field('latitude','Latitude','number','min="-90" max="90" step="any"')}${field('longitude','Longitude','number','min="-180" max="180" step="any"')}
-      <label><input name="location_authorized" type="checkbox"> Autorizo compartilhar estas coordenadas</label><p class="nota">Sem coordenadas, o cruzamento usa o ponto cadastrado da propriedade, sem confirmar o local da foto.</p>
-      ${submit('Enviar para análise')}</form>`,true);
-    let gps=null, retryPayload=null;
-    $('#gps').onclick=()=>{
-        if(!navigator.geolocation) return notice('GPS indisponível neste navegador.');
-        navigator.geolocation.getCurrentPosition(p=>{ gps={latitude:p.coords.latitude,longitude:p.coords.longitude}; $('#latitude').value=gps.latitude; $('#longitude').value=gps.longitude; $('#location_source').value='gps'; },()=>notice('GPS não autorizado ou indisponível. Use HTTPS ou localhost, ou informe manualmente.'),{timeout:12000});
+    if(!properties.length) return view('Novo relato','<p>Cadastre uma propriedade com a cooperativa antes do envio.</p>');
+    view('Novo relato',`<form id="upload" class="cartao"><label for="property_id">Propriedade</label><select name="property_id" id="property_id">${options(properties)}</select>
+      <p>Foto</p>
+      <button class="btn" type="button" id="open-camera">Abrir câmera</button>
+      <video id="camera-video" class="foto-relato" aria-label="Prévia da câmera" autoplay playsinline muted hidden></video>
+      <button class="btn" type="button" id="take-photo" hidden disabled>Tirar foto</button>
+      <button class="btn" type="button" id="close-camera" hidden>Fechar câmera</button>
+      <img id="captured-photo" class="foto-relato" alt="Foto capturada para o relato" hidden>
+      <label for="description">O que você observou?</label><textarea name="description" id="description" maxlength="2000"></textarea>
+      <button class="btn" type="button" id="gps">Permitir localização</button>
+      <p id="gps-status" role="status">Localização do aparelho ainda não obtida.</p>
+      <p class="nota">Ao enviar, o GPS da foto, quando disponível, é usado para consultar focos de calor por satélite e o clima do local. A localização do aparelho só é usada se a foto não tiver GPS.</p>
+      ${submit('Enviar relato')}</form>`,true);
+    const current = generation;
+    const form = $('#upload');
+    const video = $('#camera-video');
+    video.muted = true;
+    const preview = $('#captured-photo');
+    const openButton = $('#open-camera');
+    const takeButton = $('#take-photo');
+    const closeButton = $('#close-camera');
+    const gpsButton = $('#gps');
+    const gpsStatus = $('#gps-status');
+    let gps = null, photo = null, retryPayload = null, stream = null, cameraSession = 0;
+
+    closeCamera = () => {
+        cameraSession++;
+        stream?.getTracks().forEach(track => track.stop());
+        stream = null;
+        video.srcObject = null;
+        video.hidden = closeButton.hidden = takeButton.hidden = true;
+        takeButton.disabled = true;
+        openButton.hidden = openButton.disabled = false;
+        preview.hidden = !photo;
     };
-    $('#upload').addEventListener('input',()=>{retryPayload=null;});
-    formAction('#upload',async f=>{
-        const file=f.get('photo');if(file.size>3000000) throw new Error('A foto deve ter no máximo 3 MB.');
-        const source=f.get('location_source');const b={property_id:f.get('property_id'),description:f.get('description'),location_source:source,location_authorized:f.has('location_authorized')};
-        if(source!=='unavailable') {
-            if(!f.get('latitude') || !f.get('longitude') || !b.location_authorized) throw new Error('Informe as duas coordenadas e autorize o compartilhamento.');
-            b.latitude=Number(f.get('latitude'));b.longitude=Number(f.get('longitude'));
-            if(source==='gps' && (!gps || gps.latitude!==b.latitude || gps.longitude!==b.longitude)) throw new Error('Obtenha o GPS ou selecione coordenadas informadas.');
+    closeButton.onclick = closeCamera;
+    video.onloadeddata = () => { if(stream) takeButton.disabled = false; };
+    openButton.onclick = async () => {
+        if(!navigator.mediaDevices?.getUserMedia) return notice('Câmera indisponível. Abra o Terra Firma por HTTPS ou localhost em um navegador compatível.');
+        const session = ++cameraSession;
+        openButton.disabled = true;
+        $('#aviso').hidden = true;
+        try {
+            const camera = await navigator.mediaDevices.getUserMedia({
+                audio:false, video:{facingMode:{ideal:'environment'},width:{ideal:1280},height:{ideal:960}}
+            });
+            if(session !== cameraSession) {
+                camera.getTracks().forEach(track => track.stop());
+                return;
+            }
+            stream = camera;
+            video.srcObject = stream;
+            video.hidden = closeButton.hidden = takeButton.hidden = false;
+            preview.hidden = openButton.hidden = true;
+        } catch {
+            if(session !== cameraSession) return;
+            openButton.disabled = false;
+            notice('Não foi possível abrir a câmera. Confira a permissão do navegador e tente novamente.');
         }
-        if(!retryPayload) { const data=new FormData();data.set('metadata',JSON.stringify({...b,client_request_id:crypto.randomUUID()}));data.set('photo',file);retryPayload=data; }
-        const r=await request('/v1/incidents',{method:'POST',body:retryPayload});retryPayload=null;go(`ocorrencia/${r.id}`);
+    };
+    takeButton.onclick = async () => {
+        const session = cameraSession;
+        takeButton.disabled = true;
+        try {
+            const captured = await capturePhoto(video, stream);
+            if(session !== cameraSession) return;
+            if(!captured || !captured.size || captured.size > 3000000) throw new Error();
+            if(photoURL) URL.revokeObjectURL(photoURL);
+            photoURL = URL.createObjectURL(captured);
+            photo = captured;
+            retryPayload = null;
+            preview.src = photoURL;
+            openButton.textContent = 'Tirar outra foto';
+            closeCamera();
+        } catch {
+            if(session !== cameraSession) return;
+            takeButton.disabled = false;
+            notice('Não foi possível salvar a captura. Tente tirar a foto novamente.');
+        }
+    };
+
+    gpsButton.onclick = () => {
+        if(!navigator.geolocation) return notice('Localização indisponível neste navegador.');
+        gpsButton.disabled = true;
+        gpsStatus.textContent = 'Buscando a localização do aparelho…';
+        navigator.geolocation.getCurrentPosition(({coords}) => {
+            if(current !== generation) return;
+            gps = {latitude:coords.latitude,longitude:coords.longitude};
+            retryPayload = null;
+            gpsStatus.textContent = 'Localização do aparelho disponível como alternativa.';
+            gpsButton.disabled = false;
+        }, () => {
+            if(current !== generation) return;
+            gpsStatus.textContent = gps ? 'A atualização falhou. A localização anterior continua disponível.' : 'Localização do aparelho indisponível. Você pode enviar o relato assim.';
+            gpsButton.disabled = false;
+        }, {enableHighAccuracy:true,timeout:12000});
+    };
+    form.addEventListener('input', () => { retryPayload = null; });
+    formAction('#upload', async f => {
+        if(stream || openButton.disabled) throw new Error('Termine a captura ou feche a câmera antes de enviar.');
+        if(!photo) throw new Error('Tire uma foto para enviar o relato.');
+        if(!retryPayload) {
+            const metadata = {
+                property_id:f.get('property_id'), description:f.get('description'),
+                location_source:gps?'gps':'unavailable', location_authorized:!!gps,
+                ...gps, client_request_id:crypto.randomUUID()
+            };
+            retryPayload = new FormData();
+            retryPayload.set('metadata', JSON.stringify(metadata));
+            retryPayload.set('photo', photo, photo.type === 'image/png' ? 'foto.png' : 'foto.jpg');
+        }
+        const r = await request('/v1/incidents',{method:'POST',body:retryPayload});
+        if(current === generation) go(`ocorrencia/${r.id}`);
     });
 }
 async function incidents(current) {
@@ -146,7 +258,7 @@ async function incidents(current) {
 }
 function evidence(ai) {
     const c=ai.crossing;
-    return `<div class="cartao"><h2>Análise da foto</h2><p><strong>${esc(aiNames[ai.status]||ai.status)}</strong> · ${esc(classes[ai.classification]||'Aguardando resultado')}</p>${ai.simulated?'<p>RESULTADO SIMULADO</p>':''}<p>${esc(ai.explanation)}</p><p class="nota">${esc(ai.warning)}</p>${ai.model?`<small>${esc(ai.provider)} / ${esc(ai.model)} · ${esc(date(ai.analyzed_at))}</small>`:''}</div>${c?`<div class="cartao"><h2>Cruzamento de evidências</h2><p>${esc(c.summary)}</p><p>Referência: ${esc(c.location_source)} · ${esc(c.latitude)}, ${esc(c.longitude)}</p><p>Consulta: ${esc(date(c.reference_time))}</p>${c.weather?`<p>Clima: ${esc(c.weather.temperature_c)} °C · umidade ${esc(c.weather.humidity_pct)}% · vento ${esc(c.weather.wind_kmh)} km/h · precipitação ${esc(c.weather.precipitation_mm)} mm</p>`:'<p>Sem meteorologia real recente para correlação.</p>'}<ul>${(c.nearby_hotspots||[]).map(h=>`<li>${esc(h.distance_km)} km · ${esc(date(h.observed_at))}</li>`).join('')}</ul><ul>${c.warnings.map(w=>`<li>${esc(w)}</li>`).join('')}</ul><details><summary>Fontes e dados utilizados</summary><pre style="white-space:pre-wrap">${esc(JSON.stringify(ai.environment_snapshot,null,2))}</pre></details></div>`:''}`;
+    return `<div class="cartao"><h2>Análise da foto</h2><p><strong>${esc(aiNames[ai.status]||ai.status)}</strong> · ${esc(classes[ai.classification]||'Aguardando resultado')}</p>${ai.simulated?'<p>RESULTADO SIMULADO</p>':''}<p>${esc(ai.explanation)}</p><p class="nota">${esc(ai.warning)}</p>${ai.model?`<small>${esc(ai.provider)} / ${esc(ai.model)} · ${esc(date(ai.analyzed_at))}</small>`:''}</div>${c?`<div class="cartao"><h2>Cruzamento de evidências</h2><p>${esc(c.summary)}</p><p>Referência: ${esc(locationNames[c.location_source] || c.location_source)} · ${esc(c.latitude)}, ${esc(c.longitude)}</p><p>Consulta: ${esc(date(c.reference_time))}</p>${c.weather?`<p>Clima: ${esc(c.weather.temperature_c)} °C · umidade ${esc(c.weather.humidity_pct)}% · vento ${esc(c.weather.wind_kmh)} km/h · precipitação ${esc(c.weather.precipitation_mm)} mm</p>`:'<p>Sem meteorologia real recente para correlação.</p>'}<ul>${(c.nearby_hotspots||[]).map(h=>`<li>${esc(h.distance_km)} km · ${esc(date(h.observed_at))}</li>`).join('')}</ul><ul>${c.warnings.map(w=>`<li>${esc(w)}</li>`).join('')}</ul><details><summary>Fontes e dados utilizados</summary><pre style="white-space:pre-wrap">${esc(JSON.stringify(ai.environment_snapshot,null,2))}</pre></details></div>`:''}`;
 }
 async function detail(id,current) {
     const o=await request(`/v1/incidents/${encodeURIComponent(id)}`);if(current!==generation) return;
@@ -188,4 +300,5 @@ const LOGO_SVG = `<svg class="logo" viewBox="0 0 48 48" aria-hidden="true">
 /* ---------- Início ---------- */
 $('#marca-logo').innerHTML = LOGO_SVG;
 window.addEventListener('hashchange',route);
+window.addEventListener('pagehide', () => closeCamera?.());
 route();

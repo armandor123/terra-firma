@@ -18,7 +18,7 @@ Cada propriedade mantém latitude/longitude e um campo gerado `geography(Point,4
 
 ## Fotos fora do banco
 
-O endpoint aceita dois campos multipart: metadata JSON e arquivo photo. A imagem é validada, reencodificada em JPEG e salva em diretório privado; EXIF é removido. O PostgreSQL guarda a chave do arquivo e seu tipo. Escrita usa arquivo temporário e substituição atômica. A leitura passa pela mesma autorização da ocorrência.
+O endpoint aceita dois campos multipart: metadata JSON e arquivo photo. Após validar a imagem, o servidor lê o GPS EXIF antes de reencodificar em JPEG sem metadados. O PostgreSQL guarda as coordenadas efetivas, sua origem e a chave do arquivo privado. O worker usa essas coordenadas para consultar NASA FIRMS e Open-Meteo. Escrita usa arquivo temporário e substituição atômica. A leitura passa pela mesma autorização da ocorrência.
 
 Isso permite migrar posteriormente para object storage privado sem transformar o banco em depósito de imagens. A versão atual usa volume local privado, não S3/serviço externo. É necessário backup do banco e das fotos. Arquivos órfãos após falhas antes do commit podem exigir coleta futura.
 

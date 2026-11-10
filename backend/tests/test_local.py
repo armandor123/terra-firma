@@ -3,7 +3,7 @@ import pytest
 from PIL import Image
 from fastapi import HTTPException
 from pydantic import ValidationError
-from backend.main import clean_image,create_app
+from backend.main import prepare_photo,create_app
 from backend.schemas import Incident
 from backend.storage import PhotoStore
 
@@ -13,14 +13,15 @@ def test_photo_exif_removed_and_format_checked():
     exif=Image.Exif()
     exif[270]='private metadata'
     photo.save(output,format='JPEG',exif=exif)
-    result=clean_image(output.getvalue())
+    result, coordinates = prepare_photo(output.getvalue())
+    assert coordinates is None
     with Image.open(io.BytesIO(result)) as image:
         assert not image.getexif()
         assert image.format=='JPEG'
     with pytest.raises(HTTPException):
-        clean_image(b'not an image')
+        prepare_photo(b'not an image')
     with pytest.raises(HTTPException):
-        clean_image(b'a'*3_000_001)
+        prepare_photo(b'a'*3_000_001)
 
 def test_private_store_rejects_traversal(tmp_path):
     store=PhotoStore(tmp_path/'private')

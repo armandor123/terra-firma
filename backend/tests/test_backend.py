@@ -4,7 +4,7 @@ import io
 import time
 import httpx
 import pytest
-from PIL import Image
+from PIL import ExifTags, Image, TiffImagePlugin
 from fastapi.testclient import TestClient
 from backend.main import create_app,passwords,digest
 from backend.db import connect
@@ -149,7 +149,7 @@ def test_migration_reentrant(system):
     c,url=system
     migrate(url)
     with connect(url) as db:
-        assert db.execute('SELECT count(*) AS n FROM schema_migrations').fetchone()['n']==2
+        assert db.execute('SELECT count(*) AS n FROM schema_migrations').fetchone()['n']==3
 
 def test_concurrent_duplicate_upload(system):
     from concurrent.futures import ThreadPoolExecutor
@@ -188,6 +188,55 @@ def test_worker_persists_ai_and_crossing(system,monkeypatch):
     assert not process_one(path,photo_dir,ai)
     assert c.post(f'/v1/incidents/{iid}/analyze',headers=h('other')).status_code==404
     assert c.post(f'/v1/incidents/{iid}/analyze',headers=h('farmer')).status_code==409
+
+@pytest.mark.parametrize(('photo_ref', 'fallback', 'expected_source', 'expected_coords'), [
+    ('S', {}, 'photo_exif', (-23.5, -46.25)),
+    ('S', {'latitude':-20,'longitude':-40,'location_source':'gps','location_authorized':True},
+     'photo_exif', (-23.5, -46.25)),
+    ('X', {'latitude':-20,'longitude':-40,'location_source':'gps','location_authorized':True},
+     'gps', (-20, -40)),
+])
+def test_photo_gps_drives_satellite_query(system, monkeypatch, photo_ref, fallback, expected_source, expected_coords):
+    from datetime import datetime, timezone
+    from backend.worker import process_one
+
+    c, path = system
+    monkeypatch.delenv('GEMINI_API_KEY', raising=False)
+    exif = Image.Exif()
+    rational = TiffImagePlugin.IFDRational
+    exif[ExifTags.IFD.GPSInfo] = {
+        ExifTags.GPS.GPSLatitudeRef: photo_ref,
+        ExifTags.GPS.GPSLatitude: (rational(23), rational(30), rational(0)),
+        ExifTags.GPS.GPSLongitudeRef: 'W',
+        ExifTags.GPS.GPSLongitude: (rational(46), rational(15), rational(0)),
+    }
+    image = io.BytesIO()
+    Image.new('RGB', (10, 10)).save(image, format='JPEG', exif=exif)
+    response = send(c, raw=image.getvalue(), **fallback)
+    assert response.status_code == 201, response.text
+    iid = response.json()['id']
+    lat, lon = expected_coords
+
+    def environmental_context(request):
+        assert json.loads(request.content) == {'latitude':lat,'longitude':lon,'radius_km':10,'days':1}
+        return httpx.Response(200, json={
+            'hotspots': {'status':'ok','simulated':False,'data':[
+                {'id':'capture','latitude':lat,'longitude':lon,'observed_at':datetime.now(timezone.utc).isoformat()}
+            ]}
+        })
+
+    assert process_one(path, c.photo_dir, data_transport=httpx.MockTransport(environmental_context))
+    item = c.get(f'/v1/incidents/{iid}', headers=h('farmer')).json()
+    assert (item['latitude'], item['longitude']) == expected_coords
+    assert item['location_source'] == expected_source
+    assert item['location_authorized'] is True
+    assert item['location_verified'] is False
+    crossing = item['ai']['crossing']
+    assert crossing['location_source'] == expected_source
+    assert crossing['nearby_hotspots'][0]['id'] == 'capture'
+    saved = c.get(f'/v1/incidents/{iid}/photo', headers=h('farmer'))
+    with Image.open(io.BytesIO(saved.content)) as stored:
+        assert not stored.getexif()
 
 def test_missing_key_preserves_photo_and_allows_retry(system,monkeypatch):
     from backend.worker import process_one

@@ -31,13 +31,13 @@ export const api = new ApiClient('https://SEU_BACKEND');
 
 ## Fotos
 
-Solicitar autorização de câmera/galeria, selecionar a imagem, corrigir orientação se necessário e comprimir para JPEG abaixo de 3 MB e 12 megapixels. Guardar uma cópia durável em diretório do aplicativo antes de tentar enviar. O servidor ainda verifica o formato real e remove EXIF. A compressão no cliente economiza conexão; não substitui a validação do servidor.
+Solicite acesso à câmera e tire a foto diretamente no aplicativo. Configure a captura para JPEG de até 3 MB e 12 megapixels. Se precisar converter ou redimensionar, preserve o GPS EXIF disponível para que o servidor possa priorizá-lo. Guarde uma cópia durável antes do envio. O servidor valida a imagem e remove os metadados da cópia armazenada.
 
 No exemplo, `photoUri` deve apontar para essa cópia local do JPEG. HEIC não é aceito diretamente no backend: converter no aplicativo. Escolher câmera e manipulação de imagem compatíveis com o SDK Expo adotado; não instalar versões nativas arbitrárias fora da matriz do Expo.
 
 ## Localização e recusa
 
-Pedir permissão em contexto, no registro da ocorrência. Para GPS: coordenadas + `location_source=gps` + `location_authorized=true`. Para seleção manual autorizada: `manual`. Se negada/indisponível, não bloquear o relato: `unavailable` e omitir coordenadas. O app deve explicar a finalidade; os campos do backend são apenas o registro técnico, não substituem o aviso ao usuário.
+Explique antes do envio que o GPS gravado na foto tem prioridade na consulta de focos por satélite e meteorologia. Peça permissão para a localização do aparelho como alternativa. Para esse GPS, envie coordenadas com `location_source=gps` e `location_authorized=true`. Para coordenadas manuais autorizadas, use `manual`. Se a localização do aparelho for negada ou indisponível, envie `unavailable` e omita as coordenadas. O relato continua usando o GPS EXIF quando presente.
 
 ## Fila offline — responsabilidade do aplicativo
 

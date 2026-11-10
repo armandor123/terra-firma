@@ -1,7 +1,11 @@
 const {chromium}=require('playwright');
 const assert=require('node:assert/strict');
 (async()=>{
- const browser=await chromium.launch({headless:true});const page=await browser.newPage();
+ const browser=await chromium.launch({
+  headless:true,
+  executablePath:process.env.CHROMIUM_PATH,
+  args:['--use-fake-device-for-media-stream','--use-fake-ui-for-media-stream']
+ });const page=await browser.newPage();
  const errors=[];page.on('pageerror',e=>errors.push(e.message));
  const photo=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aWQAAAABJRU5ErkJggg==','base64');
  let sent=false,uploaded=false,revision=false;
@@ -11,7 +15,7 @@ const assert=require('node:assert/strict');
   if(path==='/v1/auth/login') {data={access_token:'a',refresh_token:'r'};sent=true;}
   else if(path==='/v1/me') data={id:'farmer',name:'Ana <script>',role:'farmer',must_change:false};
   else if(path==='/v1/properties') data=[{id:'p1',name:'Sítio Boa Esperança',municipality:'Campinas',state:'SP',latitude:-22,longitude:-47,area_ha:10}];
-  else if(path==='/v1/incidents' && req.method()==='POST') {assert.match(req.postData(),/client_request_id/);assert.match(req.postData(),/image\/png/);uploaded=true;data={id:'i1'};}
+  else if(path==='/v1/incidents' && req.method()==='POST') {assert.match(req.postData(),/client_request_id/);assert.match(req.postData(),/Content-Type: image\/(jpeg|png)/);uploaded=true;data={id:'i1'};}
   else if(path==='/v1/incidents/i1/photo') return route.fulfill({contentType:'image/png',body:photo});
   else if(path==='/v1/incidents/i1') data={id:'i1',description:'Possível fumaça',created_at:'2026-11-06T12:00:00Z',status:'submitted',photo_url:'/v1/incidents/i1/photo',ai:{status:'unavailable',classification:'inconclusive',warning:'GEMINI_API_KEY não configurada.'},reviews:[]};
   else if(path==='/v1/incidents') data=[];
@@ -24,10 +28,13 @@ const assert=require('node:assert/strict');
  await page.locator('#username').fill('ana');await page.locator('#password').fill('initial-pass');await page.getByRole('button',{name:'Entrar',exact:true}).click();
  await page.getByRole('heading',{name:'Olá, Ana <script>'}).waitFor();assert(sent);
  await page.goto('http://localhost:8088/#/foto');
- await page.locator('#photo').setInputFiles({name:'photo.png',mimeType:'image/png',buffer:photo});
+ await page.getByRole('heading',{name:'Novo relato'}).waitFor();
+ assert.equal(await page.locator('input[type=file]').count(),0);
+ await page.getByRole('button',{name:'Abrir câmera'}).click();
+ await page.getByRole('button',{name:'Tirar foto',exact:true}).click();
+ await page.locator('#captured-photo').waitFor({state:'visible'});
  await page.locator('#description').fill('Possível fumaça');
- await page.getByLabel('Autorizo o envio desta foto para análise.').check();
- await page.getByRole('button',{name:'Enviar para análise'}).click();
+ await page.getByRole('button',{name:'Enviar relato'}).click();
  await page.getByRole('heading',{name:'Análise do registro',exact:true}).waitFor();assert(uploaded);
  await page.getByText('GEMINI_API_KEY não configurada.',{exact:true}).waitFor();
  await page.goto('http://localhost:8088/#/ambiente');await page.getByRole('button',{name:'Consultar fontes'}).click();await page.getByText('SIMULADO',{exact:true}).waitFor();
