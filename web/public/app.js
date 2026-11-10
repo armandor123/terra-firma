@@ -16,11 +16,36 @@ function warnings(container, values = []) { for (const warning of values) contai
 function facts(container, values) { const dl = node("dl"); for (const [key, value] of values) { dl.append(node("dt", key), node("dd", value ?? "Não informado")); } container.append(dl); }
 function jsonOptions(payload) { return { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(payload) }; }
 function releasePhoto() { if (photoUrl) URL.revokeObjectURL(photoUrl); photoUrl = null; }
+async function prepareCameraPhoto(file) {
+  // A captura no celular pode passar de 3 MB ou vir como PNG/HEIC.
+  // Reencodificação por canvas gera JPEG sem EXIF e respeita o limite do backend.
+  const url = URL.createObjectURL(file);
+  try {
+    const image = new Image(); image.src = url; await image.decode();
+    if (!image.naturalWidth || !image.naturalHeight) throw new Error("Imagem vazia");
+    const scale = Math.min(1, 1600 / Math.max(image.naturalWidth, image.naturalHeight));
+    const canvas = document.createElement("canvas");
+    canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+    canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+    const context = canvas.getContext("2d");
+    if (!context) throw new Error("Canvas indisponível");
+    context.drawImage(image, 0, 0, canvas.width, canvas.height);
+    for (const quality of [0.8, 0.65, 0.5, 0.35]) {
+      const blob = await new Promise(resolve => canvas.toBlob(resolve, "image/jpeg", quality));
+      if (blob && blob.size <= 3_000_000)
+        return new File([blob], "foto-terra-firma.jpg", { type: "image/jpeg" });
+    }
+    throw new Error("Foto muito grande");
+  } catch {
+    throw new Error("Não foi possível preparar a foto da câmera. Tente outra foto ou escolha JPEG/PNG da galeria.");
+  } finally { URL.revokeObjectURL(url); }
+}
 function resetIncident() {
   locationGeneration++; pending = null; location = null; $("incident-form").reset();
   for (const el of $("incident-form").elements) el.disabled = false;
   $("location-status").textContent = "Sem localização. Você pode enviar o relato assim.";
   $("send-incident").textContent = "Enviar relato";
+  $("photo-status").textContent = "Escolha uma foto da galeria ou tire uma foto.";
 }
 function clearScreen() {
   user = null; page = 0; selected = null; detailGeneration++; releasePhoto(); resetIncident();
@@ -147,6 +172,19 @@ function renderReview(root, item) {
 }
 $("login-form").onsubmit = event => { event.preventDefault(); const form = event.currentTarget; busy(form.querySelector("button"), async () => { await api.login(form.elements.username.value, form.elements.password.value); form.elements.password.value = ""; user = await api.json("/v1/me"); notice(""); await startWorkspace(); }); };
 $("password-form").onsubmit = event => { event.preventDefault(); const form = event.currentTarget; busy(form.querySelector("button"), async () => { await api.json("/v1/auth/password", jsonOptions({ old_password: form.elements.old_password.value, new_password: form.elements.new_password.value })); api.clear(); clearScreen(); notice("Senha alterada. Entre novamente com a nova senha."); }); };
+$("take-photo").onclick = () => $("camera-photo").click();
+$("camera-photo").onchange = () => {
+  const file = $("camera-photo").files[0];
+  if (!file) return;
+  $("incident-form").elements.photo.value = "";
+  $("photo-status").textContent = "Foto capturada. Será ajustada para JPEG de até 3 MB ao enviar.";
+};
+$("incident-form").elements.photo.onchange = () => {
+  const file = $("incident-form").elements.photo.files[0];
+  if (!file) return;
+  $("camera-photo").value = "";
+  $("photo-status").textContent = `Foto selecionada: ${file.name}`;
+};
 $("get-location").onclick = () => {
   if (!navigator.geolocation || !window.isSecureContext) { notice("Localização exige navegador compatível e contexto seguro (HTTPS ou localhost). O relato pode ser enviado sem localização.", true); return; }
   $("get-location").disabled = true;
@@ -157,7 +195,9 @@ $("incident-form").onsubmit = event => {
   event.preventDefault(); const form = event.currentTarget;
   busy($("send-incident"), async () => {
     if (!pending) {
-      const file = form.elements.photo.files[0];
+      const cameraFile = $("camera-photo").files[0];
+      if (cameraFile) notice("Preparando a foto capturada para envio...");
+      const file = cameraFile ? await prepareCameraPhoto(cameraFile) : form.elements.photo.files[0];
       if (!file || !["image/jpeg", "image/png"].includes(file.type) || file.size > 3000000) throw new Error("Envie uma foto JPEG/PNG de até 3 MB.");
       const metadata = { client_request_id: crypto.randomUUID(), property_id: form.elements.property_id.value, description: form.elements.description.value, location_source: location ? "gps" : "unavailable", location_authorized: !!location, ...(location || {}) };
       pending = { metadata: JSON.stringify(metadata), file };

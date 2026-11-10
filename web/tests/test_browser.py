@@ -205,7 +205,11 @@ def test_mobile_and_location_refusal_allow_submission(browser,admin):
     expect(page.locator('#farmer-tools')).to_be_visible()
     page.locator('#get-location').click()
     expect(page.locator('#location-status')).to_contain_text('Localização não obtida')
-    page.locator('#incident-form [name=photo]').set_input_files({'name':'test.png','mimeType':'image/png','buffer':image()})
+    expect(page.locator('#take-photo')).to_be_visible()
+    assert page.locator('#camera-photo').get_attribute('capture') == 'environment'
+    page.locator('#camera-photo').set_input_files({'name':'camera.png','mimeType':'image/png','buffer':image()})
+    expect(page.locator('#photo-status')).to_contain_text('Foto capturada')
+    expect(page.locator('#incident-form [name=photo]')).to_have_value('')
     page.locator('#send-incident').click()
     expect(page.locator('#notice')).to_contain_text('Relato registrado',timeout=120000)
     expect(page.locator('#detail')).to_contain_text('Focos indisponíveis ou não consultados')

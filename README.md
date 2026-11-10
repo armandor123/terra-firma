@@ -1,5 +1,7 @@
 # Terra-Firma
 
+Mobile photo capture: a 'Tirar foto' button requests the device rear camera (browser-dependent); captured images are resized to JPEG under 3 MB before upload, while gallery images retain existing JPEG/PNG limits. No universal HEIC support.
+
 [Português (Brasil)](README.pt-BR.md) · [Repository](https://github.com/armandor123/terra-firma)
 
 An MVP for farmer photo reports and cooperative review. A static web interface served by Nginx calls a FastAPI backend with PostgreSQL/PostGIS. Vision is selectable (`simulated` or Gemini); each new incident receives an environmental snapshot and deterministic satellite/weather evidence. **AI never confirms a fire alone. Human review remains required.**

@@ -105,3 +105,10 @@ Texto proposto para substituir a descrição centrada em um aplicativo mobile. R
 - Consolidar os READMEs EN/PT-BR no estado entregue, com teste por funcionalidade e limites explícitos. Marcar planos anteriores como referência histórica; não apresentar Expo como app entregue. Contratos HTTP permanecem 2.1.0/1.0.0; teste compara ambos e metadata aos gerados.
 - About proposto atualizado: "Terra-Firma: MVP web de relatos com fotos, visão Gemini opcional, contexto NASA FIRMS/Open-Meteo e revisão humana por cooperativas. FastAPI + PostGIS; modo demo explícito." Não foi alterado remotamente: a integração não oferece edição e o navegador retornou página sem autenticação em 08/11/2026. Não confundir proposta salva com edição concluída.
 - Não declarar aceite live completo com base em duas consultas externas separadas; falta foto real autorizada → Gemini → snapshot real persistido → revisão na mesma ocorrência. Não salvar chaves fornecidas em git/CI para viabilizar demonstração. As branches seguem publicadas sem merge automático em main.
+
+## 10/11/2026 — Captura móvel de foto
+
+- Incluir opção explícita **Tirar foto** além do seletor de galeria. Usar `input type=file accept=image/* capture=environment`, que solicita a câmera traseira sem abrir vídeo contínuo; a escolha final é do navegador/dispositivo. A opção de arquivo JPEG/PNG permanece.
+- Limitar o arquivo de câmera no cliente com canvas, maior dimensão de 1600 px, exportação JPEG de qualidade decrescente até 3.000.000 bytes. Canvas remove EXIF e o backend continua validando tipo, tamanho, dimensões e removendo EXIF. HEIC sem decodificação no navegador deve gerar erro visível, não falsa captura.
+- Preservar `pending` com bytes JPEG transformados e o mesmo UUID/metadata no retry. Não converter arquivo da galeria automaticamente nesta alteração. Testes de navegador simulam seleção da câmera, não comprovam abertura física da câmera; testar manualmente em Android/iOS.
+- Publicação local somente pela interface web: backend, migrações, autenticação, revisão humana e simulação não mudam. A geolocalização continua exigindo HTTPS/localhost.
